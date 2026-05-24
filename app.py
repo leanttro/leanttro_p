@@ -1248,7 +1248,11 @@ def _save_creds(cliente_id, creds):
 
 def _refresh_creds(cliente_id, creds):
     """Faz refresh do token se expirou. Limpa o banco se o refresh falhar."""
-    if not (creds and creds.expired and creds.refresh_token):
+    # Se não tem expiry ou não expirou, retorna as creds como estão
+    if not creds:
+        return None
+    expired = creds.expired if creds.expiry else False
+    if not (expired and creds.refresh_token):
         return creds
     try:
         creds.refresh(GoogleAuthRequest())
@@ -1267,6 +1271,14 @@ def _creds_prontas(cliente_id):
     creds = _get_creds(cliente_id)
     if not creds:
         return None
+    # Se tem refresh_token mas não tem token de acesso, faz refresh
+    if not creds.token and creds.refresh_token:
+        try:
+            creds.refresh(GoogleAuthRequest())
+            _save_creds(cliente_id, creds)
+        except Exception as e:
+            print(f"[OAuth] Erro ao obter token inicial: {e}")
+            return None
     return _refresh_creds(cliente_id, creds)
 
 
