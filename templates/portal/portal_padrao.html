@@ -482,12 +482,10 @@ footer{
 <header>
   <div class="header-inner">
     <div class="logo">
-      {% if cliente.logo_url %}
-      <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}" style="height:32px;max-width:120px;width:auto;object-fit:contain;flex-shrink:0;border-radius:4px">
-      {% else %}
-      <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:24px;width:auto;object-fit:contain;flex-shrink:0">
-      {% endif %}
-      <div class="logo-sub" style="margin-left:8px">{{ cliente.empresa or cliente.nome }}</div>
+      <a href="{% if cliente.slug %}/c/{{ cliente.slug }}{% else %}#{% endif %}" style="display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit">
+        <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:24px;width:auto;object-fit:contain;flex-shrink:0">
+        <div class="logo-sub" style="margin-left:0">{{ cliente.empresa or cliente.nome }}</div>
+      </a>
     </div>
 
     <div class="header-right">
