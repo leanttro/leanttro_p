@@ -1674,15 +1674,25 @@ def metricas_oauth_start(cliente_slug):
     auth_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
-        prompt="consent",  # garante que refresh_token seja sempre retornado
+        prompt="consent",
     )
 
-    session["metricas_oauth_state"]      = state
-    session["metricas_oauth_slug"]       = cliente_slug
-    session["metricas_oauth_scopes"]     = scopes
-    session["metricas_oauth_cv"]         = flow.code_verifier  # salva para o callback
+    # Codifica slug e scopes no state para sobreviver à troca de worker
+    import base64 as _b64
+    meta = json.dumps({"slug": cliente_slug, "scopes": scopes, "cv": flow.code_verifier})
+    state_payload = _b64.urlsafe_b64encode(meta.encode()).decode()
 
-    return redirect(auth_url)
+    session["metricas_oauth_state"] = state
+    session["metricas_oauth_cv"]    = flow.code_verifier  # fallback se mesma sessão
+    # Guarda no cookie de sessão E no state customizado
+    session["metricas_oauth_slug"]   = cliente_slug
+    session["metricas_oauth_scopes"] = scopes
+
+    # Reconstrói a auth_url trocando o state pelo nosso payload
+    auth_url_final = auth_url.replace(
+        f"state={state}", f"state={state_payload}"
+    )
+    return redirect(auth_url_final)
 
 
 # ── OAuth Callback ──────────────────────────────────────────────────────
@@ -1695,8 +1705,21 @@ def metricas_oauth_callback():
     error        = request.args.get("error", "")
     state        = request.args.get("state", "")
     code         = request.args.get("code", "")
-    cliente_slug = session.get("metricas_oauth_slug", "")
-    scopes       = session.get("metricas_oauth_scopes", SCOPES_ALL)
+
+    # Tenta decodificar o slug/scopes do state (sobrevive troca de worker)
+    import base64 as _b64
+    cliente_slug = ""
+    scopes       = SCOPES_ALL
+    code_verifier_from_state = None
+    try:
+        meta = json.loads(_b64.urlsafe_b64decode(state + "==").decode())
+        cliente_slug          = meta.get("slug", "")
+        scopes                = meta.get("scopes", SCOPES_ALL)
+        code_verifier_from_state = meta.get("cv")
+    except Exception:
+        # Fallback: tenta pegar da sessão (mesmo worker)
+        cliente_slug = session.get("metricas_oauth_slug", "")
+        scopes       = session.get("metricas_oauth_scopes", SCOPES_ALL)
 
     if error:
         return (
@@ -1716,8 +1739,8 @@ def metricas_oauth_callback():
         abort(404)
 
     try:
-        code_verifier = session.get("metricas_oauth_cv")
-        flow = _oauth_flow(scopes, state=state, code_verifier=code_verifier)
+        code_verifier = code_verifier_from_state or session.get("metricas_oauth_cv")
+        flow = _oauth_flow(scopes, state=None, code_verifier=code_verifier)
 
         # Usa authorization_response (igual ao app de referência que funciona)
         auth_response = request.url.replace('http://', 'https://')
