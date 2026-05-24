@@ -482,11 +482,7 @@ footer{
 <header>
   <div class="header-inner">
     <div class="logo">
-      {% if cliente.logo_url %}
-      <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}" style="height:32px;max-width:120px;width:auto;object-fit:contain;flex-shrink:0;border-radius:4px">
-      {% else %}
       <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:24px;width:auto;object-fit:contain;flex-shrink:0">
-      {% endif %}
       <div class="logo-sub" style="margin-left:8px">{{ cliente.empresa or cliente.nome }}</div>
     </div>
 
@@ -540,7 +536,7 @@ footer{
   <div class="container">
     {% if cliente.logo_url %}
     <div style="margin-bottom:20px">
-      <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}" style="max-height:56px;max-width:180px;object-fit:contain;border-radius:0;filter:brightness(0) invert(1);opacity:.9">
+      <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}" style="max-height:56px;max-width:180px;object-fit:contain;border-radius:4px;opacity:.95">
     </div>
     {% endif %}
     <span class="hero-eyebrow">{{ proposta.status | replace('_',' ') | upper }}</span>
