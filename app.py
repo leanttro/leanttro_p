@@ -92,7 +92,7 @@ def gerar_slug(texto):
     return texto.strip('-')[:80]
 
 def gerar_slug_unico(base):
-    """Gera slug único verificando colisões no banco."""
+    """Gera slug único verificando colisões no banco — clientes."""
     slug = gerar_slug(base)
     if not slug:
         slug = 'cliente'
@@ -100,6 +100,31 @@ def gerar_slug_unico(base):
     i = 2
     while query('SELECT id FROM clientes WHERE slug = %s', (candidato,), one=True):
         candidato = f'{slug}-{i}'
+        i += 1
+    return candidato
+
+def gerar_slug_proposta(titulo, cliente_nome=None, excluir_id=None):
+    """Gera slug bonito para proposta baseado no título + primeiro nome do cliente.
+    Ex: 'Site João' → 'site-joao', colisão → 'site-joao-2'
+    """
+    base = titulo
+    if cliente_nome:
+        primeiro = cliente_nome.strip().split()[0]
+        base = f"{titulo} {primeiro}"
+    slug = gerar_slug(base)
+    if not slug:
+        slug = 'proposta'
+    candidato = slug
+    i = 2
+    while True:
+        q = "SELECT id FROM propostas WHERE slug = %s"
+        params = [candidato]
+        if excluir_id:
+            q += " AND id != %s"
+            params.append(excluir_id)
+        if not query(q, params, one=True):
+            break
+        candidato = f"{slug}-{i}"
         i += 1
     return candidato
 
@@ -304,18 +329,20 @@ def api_proposta_criar():
     if not d.get("cliente_id") or not d.get("titulo"):
         return jsonify({"erro": "cliente_id e titulo obrigatórios"}), 400
     token = gerar_token()
+    cliente = query("SELECT nome FROM clientes WHERE id=%s", (d["cliente_id"],), one=True)
+    slug = gerar_slug_proposta(d["titulo"], cliente["nome"] if cliente else None)
     row = query("""
         INSERT INTO propostas
             (cliente_id, titulo, descricao, validade, prazo_entrega,
-             forma_pagamento, status, cor_tema, mensagem_final, token, template)
-        VALUES (%s,%s,%s,%s,%s,%s,'rascunho',%s,%s,%s,%s) RETURNING id, token
+             forma_pagamento, status, cor_tema, mensagem_final, token, template, slug)
+        VALUES (%s,%s,%s,%s,%s,%s,'rascunho',%s,%s,%s,%s,%s) RETURNING id, token, slug
     """, (
         d["cliente_id"], d["titulo"], d.get("descricao"),
         d.get("validade") or None, d.get("prazo_entrega") or None,
         d.get("forma_pagamento"), d.get("cor_tema", "#c17f3a"),
-        d.get("mensagem_final"), token, d.get("template", "portal_padrao")
+        d.get("mensagem_final"), token, d.get("template", "portal_padrao"), slug
     ), commit=True)
-    return jsonify({"ok": True, "id": row["id"], "token": row["token"]})
+    return jsonify({"ok": True, "id": row["id"], "token": row["token"], "slug": row["slug"]})
 
 @app.route("/api/propostas/<int:pid>", methods=["GET"])
 @login_required
@@ -344,19 +371,26 @@ def api_proposta_get(pid):
 @login_required
 def api_proposta_editar(pid):
     d = request.json or {}
+    # Regenera slug se o título mudou
+    atual = query("SELECT titulo, slug FROM propostas WHERE id=%s", (pid,), one=True)
+    if atual and d["titulo"] != atual["titulo"]:
+        cliente = query("SELECT nome FROM clientes WHERE id=%s", (d["cliente_id"],), one=True)
+        novo_slug = gerar_slug_proposta(d["titulo"], cliente["nome"] if cliente else None, excluir_id=pid)
+    else:
+        novo_slug = atual["slug"] if atual and atual["slug"] else gerar_slug_proposta(d["titulo"], excluir_id=pid)
     query("""
         UPDATE propostas SET
             cliente_id=%s, titulo=%s, descricao=%s,
             validade=%s, prazo_entrega=%s, forma_pagamento=%s,
             status=%s, cor_tema=%s, mensagem_final=%s,
-            template=%s, atualizado_em=NOW()
+            template=%s, slug=%s, atualizado_em=NOW()
         WHERE id=%s
     """, (
         d["cliente_id"], d["titulo"], d.get("descricao"),
         d.get("validade") or None, d.get("prazo_entrega") or None,
         d.get("forma_pagamento"), d.get("status", "rascunho"),
         d.get("cor_tema", "#c17f3a"), d.get("mensagem_final"),
-        d.get("template", "portal_padrao"), pid
+        d.get("template", "portal_padrao"), novo_slug, pid
     ), commit=True)
 
     # Reescreve serviços
@@ -408,14 +442,17 @@ def api_proposta_duplicar(pid):
     p = query("SELECT * FROM propostas WHERE id=%s", (pid,), one=True)
     if not p: return jsonify({"erro": "não encontrada"}), 404
     token = gerar_token()
+    titulo_copia = f"[Cópia] {p['titulo']}"
+    cliente = query("SELECT nome FROM clientes WHERE id=%s", (p["cliente_id"],), one=True)
+    slug_copia = gerar_slug_proposta(titulo_copia, cliente["nome"] if cliente else None)
     row = query("""
         INSERT INTO propostas
             (cliente_id,titulo,descricao,validade,prazo_entrega,
-             forma_pagamento,cor_tema,mensagem_final,token,status)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'rascunho') RETURNING id
-    """, (p["cliente_id"], f"[Cópia] {p['titulo']}", p["descricao"],
+             forma_pagamento,cor_tema,mensagem_final,token,status,slug)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'rascunho',%s) RETURNING id
+    """, (p["cliente_id"], titulo_copia, p["descricao"],
           p["validade"], p["prazo_entrega"], p["forma_pagamento"],
-          p["cor_tema"], p["mensagem_final"], token), commit=True)
+          p["cor_tema"], p["mensagem_final"], token, slug_copia), commit=True)
     novo_id = row["id"]
     for s in (query("SELECT * FROM servicos WHERE proposta_id=%s ORDER BY ordem", (pid,)) or []):
         query("""INSERT INTO servicos
@@ -679,12 +716,13 @@ def api_templates_listar():
 
 @app.route("/p/<token>")
 def portal_cliente(token):
+    # Aceita tanto o token aleatório quanto o slug bonito
     p = query("""
         SELECT p.*, c.nome as cliente_nome, c.empresa as cliente_empresa,
                c.email as cliente_email, c.whatsapp as cliente_whatsapp
         FROM propostas p JOIN clientes c ON c.id = p.cliente_id
-        WHERE p.token = %s
-    """, (token,), one=True)
+        WHERE p.token = %s OR p.slug = %s
+    """, (token, token), one=True)
     if not p: abort(404)
 
     # Registra visualização na primeira vez
