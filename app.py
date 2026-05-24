@@ -1759,12 +1759,19 @@ def api_metricas_status(cliente_slug):
         return jsonify({"erro": "cliente nao encontrado"}), 404
     creds = _get_creds(cliente["id"]) if GOOGLE_LIBS_OK else None
     creds_ok = creds is not None and creds.valid
-    print(f"[status] slug={cliente_slug} creds={'ok' if creds else 'None'} valid={getattr(creds,'valid',False)}")
+    ga4_ok = creds_ok and bool(cliente.get("ga4_property_id"))
+    print(f"[status] slug={cliente_slug} creds={'ok' if creds else 'None'} valid={getattr(creds,'valid',False)} ga4={ga4_ok}")
     return jsonify({
-        "ativo": bool(cliente.get("metricas_ativo")),
+        "ativo":           bool(cliente.get("metricas_ativo")),
         "google_conectado": creds_ok,
+        # Campos que o frontend lê:
+        "gsc_conectado":   creds_ok,
+        "ga4_conectado":   ga4_ok,
+        "gsc_site":        cliente.get("gsc_site_url") or "",
+        "ga4_property":    cliente.get("ga4_property_id") or "",
+        # Mantém os nomes antigos também por compatibilidade
         "ga4_property_id": cliente.get("ga4_property_id"),
-        "gsc_site_url": cliente.get("gsc_site_url"),
+        "gsc_site_url":    cliente.get("gsc_site_url"),
     })
 
 
