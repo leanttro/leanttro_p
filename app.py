@@ -313,6 +313,27 @@ def api_cliente_deletar(cid):
     query("DELETE FROM clientes WHERE id = %s", (cid,), commit=True)
     return jsonify({"ok": True})
 
+@app.route("/api/clientes/<int:cid>/pin", methods=["GET"])
+@login_required
+def api_cliente_pin_get(cid):
+    """Retorna o PIN atual do cliente (só para o admin)."""
+    c = query("SELECT pin_acesso FROM clientes WHERE id=%s", (cid,), one=True)
+    if not c:
+        return jsonify({"erro": "não encontrado"}), 404
+    return jsonify({"pin": c["pin_acesso"] or ""})
+
+@app.route("/api/clientes/<int:cid>/pin", methods=["PUT"])
+@login_required
+def api_cliente_pin_set(cid):
+    """Define ou remove o PIN de acesso do cliente."""
+    d = request.json or {}
+    pin = str(d.get("pin", "")).strip()
+    if pin and (not pin.isdigit() or len(pin) != 4):
+        return jsonify({"erro": "PIN deve ter exatamente 4 dígitos numéricos"}), 400
+    query("UPDATE clientes SET pin_acesso=%s WHERE id=%s",
+          (pin or None, cid), commit=True)
+    return jsonify({"ok": True, "pin": pin or None})
+
 # ═══════════════════════════════════════════════════════════
 #  API — PROPOSTAS
 # ═══════════════════════════════════════════════════════════
@@ -961,11 +982,34 @@ def portal_cliente(token):
     p = query("""
         SELECT p.*, c.nome as cliente_nome, c.empresa as cliente_empresa,
                c.email as cliente_email, c.whatsapp as cliente_whatsapp,
-               c.slug as cliente_slug, c.logo_url as cliente_logo_url
+               c.slug as cliente_slug, c.logo_url as cliente_logo_url,
+               c.pin_acesso as cliente_pin, c.id as cliente_id
         FROM propostas p JOIN clientes c ON c.id = p.cliente_id
         WHERE p.token = %s OR p.slug = %s
     """, (token, token), one=True)
     if not p: abort(404)
+
+    # ── Verificação de PIN ──────────────────────────────────
+    pin_do_cliente = p.get("cliente_pin") or ""
+    if pin_do_cliente:
+        chave_sessao = f"pin_ok_{p['cliente_id']}"
+        if not session.get(chave_sessao):
+            # Ainda não autenticou nesta sessão — mostra tela de PIN
+            erro_pin = None
+            if request.method == "POST":
+                pin_digitado = request.form.get("pin", "").strip()
+                if pin_digitado == str(pin_do_cliente):
+                    session[chave_sessao] = True
+                else:
+                    erro_pin = "PIN incorreto. Tente novamente."
+            if not session.get(chave_sessao):
+                return render_template("portal/pin.html",
+                    token=token,
+                    cliente_nome=p.get("cliente_nome") or "",
+                    logo_url=p.get("cliente_logo_url") or "",
+                    erro=erro_pin
+                )
+    # ────────────────────────────────────────────────────────
 
     # Registra visualização na primeira vez
     if p["status"] == "rascunho":
@@ -1017,6 +1061,12 @@ def portal_cliente(token):
         token=p["token"],
         contrato=contrato
     )
+
+
+@app.route("/p/<token>", methods=["POST"])
+def portal_cliente_pin(token):
+    """Recebe o POST do formulário de PIN e redireciona de volta ao GET."""
+    return portal_cliente(token)
 
 # ═══════════════════════════════════════════════════════════
 #  PORTAL DO CLIENTE — por slug
