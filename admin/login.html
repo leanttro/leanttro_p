@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leanttro Portal — Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f5;
+  --surface:#ffffff;
+  --border:#e5e3db;
+  --text:#1a1916;
+  --text2:#5a5750;
+  --text3:#9c9890;
+  --accent:#2563eb;
+  --accent-light:#eff6ff;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow-md:0 4px 24px rgba(0,0,0,.09);
+}
+
+body{
+  font-family:'Montserrat',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Grid de fundo sutil */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size:40px 40px;
+  opacity:.5;
+  pointer-events:none;
+}
+
+/* Círculo decorativo */
+body::after{
+  content:'';
+  position:fixed;
+  width:600px;
+  height:600px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(37,99,235,.06) 0%, transparent 70%);
+  top:-100px;
+  right:-100px;
+  pointer-events:none;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  width:100%;
+  max-width:400px;
+  padding:40px 36px 36px;
+  box-shadow:var(--shadow-md);
+  position:relative;
+  z-index:1;
+  animation:fadeUp .35s ease both;
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Logo */
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:28px;
+}
+.logo-mark{
+  width:36px;
+  height:36px;
+  background:var(--text);
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.logo-mark svg{
+  width:18px;
+  height:18px;
+  stroke:#fff;
+  fill:none;
+  stroke-width:2.5;
+}
+.logo-text{
+  font-weight:700;
+  font-size:1rem;
+  letter-spacing:-.4px;
+  color:var(--text);
+  line-height:1.2;
+}
+.logo-text span{color:var(--accent)}
+.logo-sub{
+  font-size:.68rem;
+  color:var(--text3);
+  font-weight:500;
+  letter-spacing:.2px;
+  margin-top:1px;
+}
+
+/* Título */
+.login-title{
+  font-size:1.15rem;
+  font-weight:700;
+  letter-spacing:-.4px;
+  color:var(--text);
+  margin-bottom:4px;
+}
+.login-desc{
+  font-size:.78rem;
+  color:var(--text3);
+  margin-bottom:24px;
+}
+
+/* Erro */
+.erro-box{
+  background:var(--red-light);
+  border:1px solid #fecaca;
+  border-radius:var(--radius-sm);
+  padding:10px 13px;
+  font-size:.78rem;
+  color:var(--red);
+  margin-bottom:18px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.erro-box svg{
+  width:14px;
+  height:14px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2.5;
+  flex-shrink:0;
+}
+
+/* Campos */
+.field{margin-bottom:14px}
+.field label{
+  display:block;
+  font-size:.68rem;
+  font-weight:700;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  color:var(--text2);
+  margin-bottom:5px;
+}
+.field input{
+  width:100%;
+  padding:9px 12px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:.84rem;
+  font-family:'Montserrat',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  outline:none;
+  transition:.15s;
+}
+.field input:focus{
+  border-color:var(--accent);
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(37,99,235,.08);
+}
+.field input::placeholder{color:var(--text3)}
+
+/* Senha com toggle */
+.senha-wrap{position:relative}
+.senha-wrap input{padding-right:40px}
+.toggle-senha{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  background:none;
+  border:none;
+  cursor:pointer;
+  color:var(--text3);
+  display:flex;
+  align-items:center;
+  padding:4px;
+  border-radius:4px;
+  transition:.15s;
+}
+.toggle-senha:hover{color:var(--text2)}
+.toggle-senha svg{
+  width:15px;
+  height:15px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+}
+
+/* Botão */
+.btn-login{
+  width:100%;
+  padding:10px 14px;
+  background:var(--text);
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-sm);
+  font-size:.82rem;
+  font-weight:700;
+  font-family:'Montserrat',sans-serif;
+  cursor:pointer;
+  transition:.15s;
+  margin-top:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  letter-spacing:.1px;
+}
+.btn-login:hover{background:#2a2a26}
+.btn-login:active{transform:scale(.99)}
+.btn-login svg{
+  width:14px;
+  height:14px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2.5;
+}
+
+/* Loading state */
+.btn-login.loading{opacity:.7;pointer-events:none}
+.spinner{
+  width:14px;
+  height:14px;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Rodapé */
+.card-foot{
+  margin-top:24px;
+  padding-top:18px;
+  border-top:1px solid var(--border);
+  text-align:center;
+  font-size:.7rem;
+  color:var(--text3);
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">Leanttro<span>Portal</span></div>
+      <div class="logo-sub">Painel administrativo</div>
+    </div>
+  </div>
+
+  <div class="login-title">Bem-vindo de volta</div>
+  <div class="login-desc">Entre com suas credenciais para acessar o painel.</div>
+
+  {% if erro %}
+  <div class="erro-box">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ erro }}
+  </div>
+  {% endif %}
+
+  <form method="POST" action="/admin/login" id="form-login">
+    <div class="field">
+      <label>E-mail</label>
+      <input
+        type="email"
+        name="email"
+        placeholder="seu@email.com"
+        autocomplete="email"
+        required
+        autofocus
+        value="{{ request.form.get('email', '') }}"
+      >
+    </div>
+
+    <div class="field">
+      <label>Senha</label>
+      <div class="senha-wrap">
+        <input
+          type="password"
+          name="senha"
+          id="campo-senha"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          required
+        >
+        <button type="button" class="toggle-senha" onclick="toggleSenha()" title="Mostrar/ocultar senha">
+          <svg id="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="icon-eye-off" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-login" id="btn-login">
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+      Entrar
+    </button>
+  </form>
+
+  <div class="card-foot">
+    Leanttro © {{ now.year if now else '2026' }} &nbsp;·&nbsp; Acesso restrito
+  </div>
+</div>
+
+<script>
+function toggleSenha() {
+  const campo = document.getElementById('campo-senha');
+  const eye    = document.getElementById('icon-eye');
+  const eyeOff = document.getElementById('icon-eye-off');
+  if (campo.type === 'password') {
+    campo.type = 'text';
+    eye.style.display    = 'none';
+    eyeOff.style.display = '';
+  } else {
+    campo.type = 'password';
+    eye.style.display    = '';
+    eyeOff.style.display = 'none';
+  }
+}
+
+document.getElementById('form-login').addEventListener('submit', function() {
+  const btn = document.getElementById('btn-login');
+  btn.classList.add('loading');
+  btn.innerHTML = '<div class="spinner"></div> Entrando...';
+});
+</script>
+</body>
+</html>
