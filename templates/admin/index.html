@@ -693,8 +693,8 @@ tr:hover td{background:#fafaf8}
           </div>
           <div class="field">
             <label>URL do site (GSC)</label>
-            <input id="mc-gsc" placeholder="https://seusite.com/" type="url">
-            <div class="field-hint">Exatamente como cadastrado no Search Console (com / no final).</div>
+            <input id="mc-gsc" placeholder="sc-domain:seusite.com ou https://seusite.com/" type="text" style="font-family:monospace;font-size:.78rem">
+            <div class="field-hint">Exatamente como cadastrado no Search Console. <strong>Sem barra no final</strong> para domínios (<code style="font-size:.7rem;color:var(--accent)">sc-domain:seusite.com</code>).</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -1527,7 +1527,9 @@ async function salvarConfigMetricas() {
   const id  = document.getElementById('mc-id').value;
   const slug = document.getElementById('mc-slug').value.trim();
   const ga4 = document.getElementById('mc-ga4').value.trim();
-  const gsc = document.getElementById('mc-gsc').value.trim();
+  let gsc = document.getElementById('mc-gsc').value.trim();
+  // sc-domain: properties não aceitam barra no final
+  if (gsc.startsWith('sc-domain:')) gsc = gsc.replace(/\/+$/, '');
   if (!id) return toast('Salve o cliente antes de configurar as métricas', false);
   if (ga4 && !ga4.startsWith('properties/')) {
     return toast('GA4 Property ID deve começar com "properties/" — ex: properties/123456789', false);
