@@ -1,3 +1,4 @@
+"""
 Portal de propostas/projetos para clientes da Leanttro
 """
 
@@ -132,7 +133,7 @@ def gerar_slug_unico(base):
 
 def gerar_slug_proposta(titulo, cliente_nome=None, excluir_id=None):
     """Gera slug bonito para proposta baseado no título + primeiro nome do cliente.
-    Ex: 'Site João' → 'site-joao', colisão → 'site-joao-2'
+    Ex: 'Site João' -> 'site-joao', colisão -> 'site-joao-2'
     """
     base = titulo
     if cliente_nome:
