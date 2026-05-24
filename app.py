@@ -262,8 +262,8 @@ def api_cliente_criar():
     slug = d.get("slug") or gerar_slug_unico(base)
     token_cliente = gerar_token(20)
     row = query(
-        "INSERT INTO clientes (nome, empresa, email, whatsapp, slug, token_cliente) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
-        (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), slug, token_cliente), commit=True
+        "INSERT INTO clientes (nome, empresa, email, whatsapp, slug, token_cliente, logo_url) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+        (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), slug, token_cliente, d.get("logo_url")), commit=True
     )
     return jsonify({"ok": True, "id": row["id"] if row else None, "slug": slug, "token_cliente": token_cliente})
 
@@ -297,8 +297,8 @@ def api_cliente_editar(cid):
         novo_slug = candidato
     else:
         novo_slug = atual["slug"] if atual else gerar_slug_unico(base)
-    query("UPDATE clientes SET nome=%s, empresa=%s, email=%s, whatsapp=%s, slug=%s WHERE id=%s",
-          (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), novo_slug, cid), commit=True)
+    query("UPDATE clientes SET nome=%s, empresa=%s, email=%s, whatsapp=%s, slug=%s, logo_url=%s WHERE id=%s",
+          (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), novo_slug, d.get("logo_url"), cid), commit=True)
     return jsonify({"ok": True, "slug": novo_slug})
 
 @app.route("/api/clientes/<int:cid>", methods=["DELETE"])
