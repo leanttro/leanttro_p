@@ -5,8 +5,9 @@ Portal de propostas/projetos para clientes da Leanttro
 
 from flask import (
     Flask, render_template, request, jsonify,
-    redirect, session, g, abort, url_for
+    redirect, session, g, abort, url_for, Response
 )
+from weasyprint import HTML as WeasyHTML
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
@@ -811,6 +812,129 @@ def api_contrato_salvar(pid):
         pid
     ), commit=True)
     return jsonify({"ok": True})
+
+@app.route("/api/propostas/<int:pid>/contrato/pdf")
+def api_contrato_pdf(pid):
+    """Gera e retorna o PDF do contrato — acessível pelo cliente via token ou pelo admin logado"""
+    token = request.args.get("token", "")
+    is_admin = bool(session.get("admin_id"))
+
+    p = query("""
+        SELECT p.*, c.nome as cliente_nome, c.empresa as cliente_empresa
+        FROM propostas p JOIN clientes c ON c.id = p.cliente_id
+        WHERE p.id = %s
+    """, (pid,), one=True)
+
+    if not p:
+        abort(404)
+    if not is_admin and p["token"] != token:
+        abort(403)
+    if not p["contrato_texto"]:
+        abort(404)
+
+    # Dados de assinatura
+    assinado      = p.get("contrato_assinado") or False
+    nome_assinou  = p.get("contrato_nome_assinou") or ""
+    assinado_em   = p.get("contrato_assinado_em")
+    data_fmt      = ""
+    if assinado_em:
+        try:
+            data_fmt = assinado_em.strftime("%d/%m/%Y")
+        except Exception:
+            data_fmt = str(assinado_em)[:10].split("-")
+            data_fmt = f"{data_fmt[2]}/{data_fmt[1]}/{data_fmt[0]}" if len(data_fmt) == 3 else str(assinado_em)[:10]
+
+    cliente_label = p.get("cliente_empresa") or p.get("cliente_nome") or ""
+    titulo        = p.get("titulo") or "Contrato"
+    texto         = p.get("contrato_texto") or ""
+
+    # Rodapé de assinatura
+    if assinado:
+        rodape_html = f"""
+        <div class="rodape-assinatura">
+            ✓ Assinado eletronicamente por <strong>{nome_assinou}</strong>
+            em {data_fmt} — válido conforme Lei 14.063/2020
+        </div>"""
+    else:
+        rodape_html = """
+        <div class="rodape-assinatura" style="border-top:1px solid #000">
+            Assinatura do Contratante: _____________________________ &nbsp;&nbsp; Data: ___/___/______
+        </div>"""
+
+    # Converte quebras de linha em <br>
+    texto_html = texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {{
+    size: A4;
+    margin: 20mm 18mm 20mm 18mm;
+    @bottom-center {{
+      content: "Leanttro Tecnologia · CNPJ 63.556.406/0001-75 · São Paulo/SP · leanttro.com";
+      font-size: 9px;
+      color: #aaa;
+      font-family: Georgia, serif;
+    }}
+  }}
+  body {{
+    font-family: Georgia, serif;
+    font-size: 11.5px;
+    line-height: 1.85;
+    color: #111;
+    background: #fff;
+  }}
+  .cabecalho {{
+    text-align: center;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #111;
+  }}
+  .cabecalho h1 {{
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+  }}
+  .cabecalho p {{
+    font-size: 11px;
+    color: #555;
+    margin: 0;
+  }}
+  .corpo {{
+    margin-bottom: 40px;
+  }}
+  .rodape-assinatura {{
+    margin-top: 48px;
+    padding-top: 14px;
+    border-top: 1px solid #ccc;
+    font-size: 10px;
+    color: #444;
+  }}
+</style>
+</head>
+<body>
+  <div class="cabecalho">
+    <h1>Contrato de Prestação de Serviços</h1>
+    <p>{titulo} &mdash; {cliente_label}</p>
+  </div>
+  <div class="corpo">{texto_html}</div>
+  {rodape_html}
+</body>
+</html>"""
+
+    pdf_bytes = WeasyHTML(string=html_content).write_pdf()
+    filename  = f"contrato-{titulo.lower().replace(' ', '-')}.pdf"
+    filename  = re.sub(r'[^a-z0-9-]', '', filename)
+
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 # ═══════════════════════════════════════════════════════════
 #  API — TEMPLATES DO PORTAL
