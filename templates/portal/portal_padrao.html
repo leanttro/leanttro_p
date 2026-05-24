@@ -469,10 +469,20 @@ footer{
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
   .hero{padding:32px 20px 28px}
-  .hero-cards{flex-direction:row}
-  .hero-card{min-width:0}
+  .hero-cards{flex-direction:row;flex-wrap:wrap}
+  .hero-card{min-width:0;flex:1 1 calc(50% - 6px)}
+  .hero-card-label{font-size:.55rem}
+  .hero-card-value{font-size:.95rem}
+  .hero-card-value.big{font-size:1.15rem}
   .metricas-stats{grid-template-columns:1fr 1fr}
   .footer-inner{justify-content:center;flex-direction:column;text-align:center;gap:10px}
+  /* botão WhatsApp na mensagem final — não vira bolinha */
+  .mensagem-final .btn-wpp{
+    border-radius:20px!important;
+    width:auto!important;height:auto!important;
+    padding:9px 18px!important;
+  }
+  .mensagem-final .btn-wpp svg{width:16px!important;height:16px!important}
 }
 </style>
 </head>
@@ -1271,6 +1281,13 @@ function downloadContratoPDF() {
   const nomeSig  = {{ (contrato.contrato_nome_assinou or '') | tojson }};
   const dataSig  = {{ (contrato.contrato_assinado_em[:10] if contrato.contrato_assinado_em else '') | tojson }};
 
+  // Converte quebras de linha em <br> para o html2pdf renderizar corretamente
+  const textoHtml = texto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+
   const rodape = assinado
     ? `<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ccc;font-size:11px;color:#666">
         ✓ Assinado eletronicamente por <strong>${nomeSig}</strong> em ${dataSig.split('-').reverse().join('/')} — válido conforme Lei 14.063/2020
@@ -1279,27 +1296,31 @@ function downloadContratoPDF() {
         Assinatura do Contratante: _____________________________ Data: ___/___/______
        </div>`;
 
-  const html = `
-    <div style="font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#111;padding:40px;max-width:700px">
+  const conteudo = `
+    <div style="font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#111;padding:40px;width:700px;background:#fff">
       <div style="text-align:center;margin-bottom:32px">
-        <div style="font-size:18px;font-weight:bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</div>
+        <div style="font-size:18px;font-weight:bold;color:#111">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</div>
         <div style="font-size:12px;color:#555;margin-top:6px">${titulo} — ${cliente}</div>
       </div>
-      <div style="white-space:pre-wrap">${texto}</div>
+      <div style="font-size:12px;line-height:1.9;color:#222">${textoHtml}</div>
       ${rodape}
       <div style="margin-top:16px;font-size:10px;color:#999;text-align:center">Leanttro Tecnologia · CNPJ 63.556.406/0001-75 · São Paulo/SP · leanttro.com</div>
     </div>`;
 
-  const el = document.createElement('div');
-  el.innerHTML = html;
-  document.body.appendChild(el);
+  // Wrapper visível fora da tela — html2canvas precisa de elemento renderizável
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;left:0;top:0;width:700px;background:#fff;z-index:-9999;opacity:0;pointer-events:none';
+  wrapper.innerHTML = conteudo;
+  document.body.appendChild(wrapper);
+
+  const filename = `contrato-${titulo.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}.pdf`;
 
   html2pdf().set({
-    margin: 0,
-    filename: `contrato-${titulo.toLowerCase().replace(/\s+/g,'-')}.pdf`,
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save().then(() => document.body.removeChild(el));
+    margin:      [10, 10, 10, 10],
+    filename:    filename,
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(wrapper).save().then(() => document.body.removeChild(wrapper));
 }
 </script>
 </body>
