@@ -1354,7 +1354,7 @@ def api_metricas_gsc(cliente_slug):
     if not cliente.get("metricas_ativo"):
         return jsonify({"erro": "acesso não liberado"}), 403
 
-    site_url = (cliente.get("gsc_site_url") or "").strip()
+    site_url = (cliente.get("gsc_site_url") or "").strip().rstrip("/")
     if not site_url:
         return jsonify({"erro": "gsc_site_url não configurado para este cliente"}), 400
 
@@ -1849,9 +1849,8 @@ def api_admin_metricas_config(cliente_id):
                     "(ex: properties/123456789)"
         }), 400
 
-    # Garante barra no final da URL do GSC
-    if gsc_url and not gsc_url.endswith("/"):
-        gsc_url += "/"
+    # Remove barra no final (sc-domain: não aceita barra)
+    gsc_url = gsc_url.rstrip("/")
 
     query(
         "UPDATE clientes SET ga4_property_id=%s, gsc_site_url=%s WHERE id=%s",
