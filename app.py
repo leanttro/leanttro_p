@@ -1,4 +1,3 @@
-"""
 LEANTTRO PORTAL — app.py
 Portal de propostas/projetos para clientes da Leanttro
 """
@@ -29,6 +28,24 @@ import unicodedata
 import re
 from dotenv import load_dotenv
 
+# ── Imports do módulo de métricas premium ────────────────────
+try:
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request as GoogleAuthRequest
+    from google_auth_oauthlib.flow import Flow
+    from googleapiclient.discovery import build as google_build
+    from google.analytics.data_v1beta import BetaAnalyticsDataClient
+    from google.analytics.data_v1beta.types import (
+        RunReportRequest, DateRange, Metric, Dimension, OrderBy
+    )
+    import google.auth.exceptions
+    GOOGLE_LIBS_OK = True
+except ImportError:
+    GOOGLE_LIBS_OK = False
+    print("⚠️  Módulo de métricas: libs Google não instaladas. "
+          "Rode: pip install google-auth google-auth-oauthlib "
+          "google-api-python-client google-analytics-data")
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -44,6 +61,11 @@ GOOGLE_CLIENT_ID  = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SEC = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT   = os.getenv("GOOGLE_REDIRECT_URI", "https://portal.leanttro.com/oauth/callback")
 BASE_URL          = os.getenv("BASE_URL", "http://localhost:5002")
+
+# Escopos OAuth do módulo de métricas
+SCOPES_GSC = ["https://www.googleapis.com/auth/webmasters.readonly"]
+SCOPES_GA4 = ["https://www.googleapis.com/auth/analytics.readonly"]
+SCOPES_ALL = SCOPES_GSC + SCOPES_GA4
 
 # ═══════════════════════════════════════════════════════════
 #  BANCO
@@ -568,7 +590,7 @@ def api_mensagens_marcar_lidas(pid):
     return jsonify({"ok": True})
 
 # ═══════════════════════════════════════════════════════════
-#  API — MÉTRICAS
+#  API — MÉTRICAS (entrada manual por proposta — existente)
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/metricas/<int:pid>", methods=["POST"])
@@ -1143,6 +1165,600 @@ def index():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "app": "leanttro-portal"})
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  MÓDULO DE MÉTRICAS PREMIUM
+#  Acesso via /metricas/<cliente_slug>
+#  Credenciais Google por cliente (JSONB em clientes.google_credentials)
+#  URI de callback lida do env: GOOGLE_REDIRECT_URI
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── Helpers de credenciais ──────────────────────────────────────────────
+
+def _get_creds(cliente_id):
+    """Lê google_credentials do banco e retorna objeto Credentials ou None."""
+    if not GOOGLE_LIBS_OK:
+        return None
+    row = query(
+        "SELECT google_credentials FROM clientes WHERE id=%s",
+        (cliente_id,), one=True
+    )
+    if not row or not row["google_credentials"]:
+        return None
+    cred_data = row["google_credentials"]
+    if isinstance(cred_data, str):
+        cred_data = json.loads(cred_data)
+    try:
+        return Credentials(
+            token=cred_data.get("token"),
+            refresh_token=cred_data.get("refresh_token"),
+            token_uri=cred_data.get("token_uri", "https://oauth2.googleapis.com/token"),
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SEC,
+            scopes=cred_data.get("scopes", SCOPES_ALL),
+        )
+    except Exception:
+        return None
+
+
+def _save_creds(cliente_id, creds):
+    """Persiste Credentials na coluna google_credentials do cliente."""
+    cred_data = {
+        "token":         creds.token,
+        "refresh_token": creds.refresh_token,
+        "token_uri":     creds.token_uri,
+        "scopes":        list(creds.scopes) if creds.scopes else SCOPES_ALL,
+    }
+    query(
+        "UPDATE clientes SET google_credentials=%s, metricas_conectado_em=NOW() WHERE id=%s",
+        (json.dumps(cred_data), cliente_id), commit=True
+    )
+
+
+def _refresh_creds(cliente_id, creds):
+    """Faz refresh do token se expirou. Limpa o banco se o refresh falhar."""
+    if not (creds and creds.expired and creds.refresh_token):
+        return creds
+    try:
+        creds.refresh(GoogleAuthRequest())
+        _save_creds(cliente_id, creds)
+        return creds
+    except google.auth.exceptions.RefreshError:
+        query(
+            "UPDATE clientes SET google_credentials=NULL WHERE id=%s",
+            (cliente_id,), commit=True
+        )
+        return None
+
+
+def _creds_prontas(cliente_id):
+    """Retorna Credentials válidas (com refresh automático) ou None."""
+    creds = _get_creds(cliente_id)
+    if not creds:
+        return None
+    return _refresh_creds(cliente_id, creds)
+
+
+def _oauth_flow(scopes, state=None):
+    """Cria um Flow OAuth com as configurações do app.
+    A redirect URI vem de GOOGLE_REDIRECT_URI no .env (variável GOOGLE_REDIRECT).
+    """
+    config = {
+        "web": {
+            "client_id":     GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SEC,
+            "auth_uri":      "https://accounts.google.com/o/oauth2/auth",
+            "token_uri":     "https://oauth2.googleapis.com/token",
+            "redirect_uris": [GOOGLE_REDIRECT],
+        }
+    }
+    kwargs = dict(scopes=scopes, redirect_uri=GOOGLE_REDIRECT)
+    if state:
+        kwargs["state"] = state
+    return Flow.from_client_config(config, **kwargs)
+
+
+# ── Rota principal do cliente ────────────────────────────────────────────
+
+@app.route("/metricas/<cliente_slug>")
+def metricas_cliente(cliente_slug):
+    cliente = query("SELECT * FROM clientes WHERE slug=%s", (cliente_slug,), one=True)
+    if not cliente:
+        abort(404)
+
+    if not cliente.get("metricas_ativo"):
+        return render_template(
+            "portal/metricas_bloqueado.html",
+            cliente=dict(cliente)
+        )
+
+    creds     = _get_creds(cliente["id"])
+    conectado = bool(creds and creds.refresh_token)
+
+    return render_template(
+        "portal/metricas_cliente.html",
+        cliente=dict(cliente),
+        ga4_property_id=cliente.get("ga4_property_id") or "",
+        gsc_site_url=cliente.get("gsc_site_url") or "",
+        conectado=conectado,
+    )
+
+
+# ── API GSC ──────────────────────────────────────────────────────────────
+
+@app.route("/api/metricas/<cliente_slug>/gsc")
+def api_metricas_gsc(cliente_slug):
+    if not GOOGLE_LIBS_OK:
+        return jsonify({"erro": "Dependências Google não instaladas no servidor"}), 500
+
+    cliente = query(
+        "SELECT id, gsc_site_url, metricas_ativo FROM clientes WHERE slug=%s",
+        (cliente_slug,), one=True
+    )
+    if not cliente:
+        return jsonify({"erro": "cliente não encontrado"}), 404
+    if not cliente.get("metricas_ativo"):
+        return jsonify({"erro": "acesso não liberado"}), 403
+
+    site_url = (cliente.get("gsc_site_url") or "").strip()
+    if not site_url:
+        return jsonify({"erro": "gsc_site_url não configurado para este cliente"}), 400
+
+    try:
+        dias = max(1, min(int(request.args.get("dias", 28)), 90))
+    except (ValueError, TypeError):
+        dias = 28
+
+    hoje        = datetime.utcnow().date()
+    data_inicio = (hoje - timedelta(days=dias)).isoformat()
+    data_fim    = hoje.isoformat()
+
+    creds = _creds_prontas(cliente["id"])
+    if not creds:
+        return jsonify({"erro": "Google não conectado", "conectado": False}), 401
+
+    try:
+        svc = google_build("webmasters", "v3", credentials=creds)
+
+        def _query_gsc(dimensions, row_limit=10, order_field="clicks"):
+            body = {
+                "startDate":  data_inicio,
+                "endDate":    data_fim,
+                "dimensions": dimensions,
+                "rowLimit":   row_limit,
+            }
+            if dimensions:
+                body["orderBy"] = [{"fieldName": order_field, "sortOrder": "DESCENDING"}]
+            return svc.searchanalytics().query(siteUrl=site_url, body=body).execute()
+
+        # Totais globais
+        r_totais = _query_gsc([], row_limit=1)
+        t = r_totais.get("rows", [{}])[0] if r_totais.get("rows") else {}
+        cliques    = round(t.get("clicks",      0))
+        impressoes = round(t.get("impressions", 0))
+        ctr        = round(t.get("ctr",         0) * 100, 2)
+        posicao    = round(t.get("position",    0), 1)
+
+        # Top páginas
+        r_pag = _query_gsc(["page"], row_limit=10)
+        top_paginas = [
+            {
+                "pagina":     r["keys"][0],
+                "cliques":    round(r.get("clicks",      0)),
+                "impressoes": round(r.get("impressions", 0)),
+                "ctr":        round(r.get("ctr",         0) * 100, 2),
+                "posicao":    round(r.get("position",    0), 1),
+            }
+            for r in r_pag.get("rows", [])
+        ]
+
+        # Top keywords
+        r_kw = _query_gsc(["query"], row_limit=10)
+        top_keywords = [
+            {
+                "keyword":    r["keys"][0],
+                "cliques":    round(r.get("clicks",      0)),
+                "impressoes": round(r.get("impressions", 0)),
+                "ctr":        round(r.get("ctr",         0) * 100, 2),
+                "posicao":    round(r.get("position",    0), 1),
+            }
+            for r in r_kw.get("rows", [])
+        ]
+
+        # Série temporal diária
+        r_serie = _query_gsc(["date"], row_limit=90, order_field="date")
+        serie = [
+            {
+                "data":       r["keys"][0],
+                "cliques":    round(r.get("clicks",      0)),
+                "impressoes": round(r.get("impressions", 0)),
+            }
+            for r in r_serie.get("rows", [])
+        ]
+
+        return jsonify({
+            "ok":           True,
+            "cliques":      cliques,
+            "impressoes":   impressoes,
+            "ctr":          ctr,
+            "posicao":      posicao,
+            "top_paginas":  top_paginas,
+            "top_keywords": top_keywords,
+            "serie":        serie,
+            "periodo_dias": dias,
+        })
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+# ── API GA4 ──────────────────────────────────────────────────────────────
+
+@app.route("/api/metricas/<cliente_slug>/ga4")
+def api_metricas_ga4(cliente_slug):
+    if not GOOGLE_LIBS_OK:
+        return jsonify({"erro": "Dependências Google não instaladas no servidor"}), 500
+
+    cliente = query(
+        "SELECT id, ga4_property_id, metricas_ativo FROM clientes WHERE slug=%s",
+        (cliente_slug,), one=True
+    )
+    if not cliente:
+        return jsonify({"erro": "cliente não encontrado"}), 404
+    if not cliente.get("metricas_ativo"):
+        return jsonify({"erro": "acesso não liberado"}), 403
+
+    property_id = (cliente.get("ga4_property_id") or "").strip()
+    if not property_id:
+        return jsonify({"erro": "ga4_property_id não configurado para este cliente"}), 400
+    if not property_id.startswith("properties/"):
+        return jsonify({"erro": "ga4_property_id deve ter formato 'properties/XXXXXXXXX'"}), 400
+
+    try:
+        dias = max(1, min(int(request.args.get("dias", 28)), 90))
+    except (ValueError, TypeError):
+        dias = 28
+
+    hoje        = datetime.utcnow().date()
+    data_inicio = (hoje - timedelta(days=dias)).isoformat()
+    data_fim    = hoje.isoformat()
+
+    creds = _creds_prontas(cliente["id"])
+    if not creds:
+        return jsonify({"erro": "Google não conectado", "conectado": False}), 401
+
+    try:
+        ga = BetaAnalyticsDataClient(credentials=creds)
+        dr = DateRange(start_date=data_inicio, end_date=data_fim)
+
+        # Totais
+        resp_totais = ga.run_report(RunReportRequest(
+            property=property_id,
+            date_ranges=[dr],
+            metrics=[
+                Metric(name="sessions"),
+                Metric(name="totalUsers"),
+                Metric(name="screenPageViews"),
+                Metric(name="bounceRate"),
+                Metric(name="averageSessionDuration"),
+            ],
+        ))
+        mv = resp_totais.rows[0].metric_values if resp_totais.rows else None
+        sessoes       = int(float(mv[0].value))          if mv else 0
+        usuarios      = int(float(mv[1].value))          if mv else 0
+        pageviews     = int(float(mv[2].value))          if mv else 0
+        bounce_rate   = round(float(mv[3].value) * 100, 1) if mv else 0
+        duracao_media = round(float(mv[4].value))        if mv else 0
+
+        # Canais
+        resp_canais = ga.run_report(RunReportRequest(
+            property=property_id,
+            date_ranges=[dr],
+            dimensions=[Dimension(name="sessionDefaultChannelGroup")],
+            metrics=[Metric(name="sessions")],
+            order_bys=[OrderBy(
+                metric=OrderBy.MetricOrderBy(metric_name="sessions"),
+                desc=True
+            )],
+            limit=8,
+        ))
+        canais = [
+            {
+                "canal":   r.dimension_values[0].value,
+                "sessoes": int(float(r.metric_values[0].value)),
+            }
+            for r in resp_canais.rows
+        ]
+
+        # Top páginas
+        resp_pag = ga.run_report(RunReportRequest(
+            property=property_id,
+            date_ranges=[dr],
+            dimensions=[Dimension(name="pagePath")],
+            metrics=[
+                Metric(name="screenPageViews"),
+                Metric(name="sessions"),
+            ],
+            order_bys=[OrderBy(
+                metric=OrderBy.MetricOrderBy(metric_name="screenPageViews"),
+                desc=True
+            )],
+            limit=10,
+        ))
+        top_paginas = [
+            {
+                "pagina":    r.dimension_values[0].value,
+                "pageviews": int(float(r.metric_values[0].value)),
+                "sessoes":   int(float(r.metric_values[1].value)),
+            }
+            for r in resp_pag.rows
+        ]
+
+        # Série temporal
+        resp_serie = ga.run_report(RunReportRequest(
+            property=property_id,
+            date_ranges=[dr],
+            dimensions=[Dimension(name="date")],
+            metrics=[
+                Metric(name="sessions"),
+                Metric(name="totalUsers"),
+            ],
+            order_bys=[OrderBy(
+                dimension=OrderBy.DimensionOrderBy(dimension_name="date")
+            )],
+            limit=90,
+        ))
+        serie = [
+            {
+                "data":     r.dimension_values[0].value,
+                "sessoes":  int(float(r.metric_values[0].value)),
+                "usuarios": int(float(r.metric_values[1].value)),
+            }
+            for r in resp_serie.rows
+        ]
+
+        return jsonify({
+            "ok":            True,
+            "sessoes":       sessoes,
+            "usuarios":      usuarios,
+            "pageviews":     pageviews,
+            "bounce_rate":   bounce_rate,
+            "duracao_media": duracao_media,
+            "canais":        canais,
+            "top_paginas":   top_paginas,
+            "serie":         serie,
+            "periodo_dias":  dias,
+        })
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+# ── API IA Análise ────────────────────────────────────────────────────────
+
+@app.route("/api/metricas/<cliente_slug>/ia-analise", methods=["POST"])
+def api_metricas_ia_analise(cliente_slug):
+    cliente = query(
+        "SELECT id, nome, empresa, metricas_ativo FROM clientes WHERE slug=%s",
+        (cliente_slug,), one=True
+    )
+    if not cliente:
+        return jsonify({"erro": "cliente não encontrado"}), 404
+    if not cliente.get("metricas_ativo"):
+        return jsonify({"erro": "acesso não liberado"}), 403
+
+    d   = request.json or {}
+    gsc = d.get("gsc", {})
+    ga4 = d.get("ga4", {})
+
+    nome_empresa = (cliente.get("empresa") or cliente.get("nome") or cliente_slug).strip()
+    top_kw    = (gsc.get("top_keywords") or [{}])[0].get("keyword",  "N/D")
+    top_canal = (ga4.get("canais")       or [{}])[0].get("canal",    "N/D")
+
+    resumo = (
+        f"Google Search Console — últimos {gsc.get('periodo_dias', 28)} dias:\n"
+        f"  Cliques: {gsc.get('cliques', 'N/D')} | "
+        f"Impressões: {gsc.get('impressoes', 'N/D')} | "
+        f"CTR: {gsc.get('ctr', 'N/D')}% | "
+        f"Posição média: {gsc.get('posicao', 'N/D')}\n"
+        f"  Keyword principal: {top_kw}\n\n"
+        f"Google Analytics 4 — últimos {ga4.get('periodo_dias', 28)} dias:\n"
+        f"  Sessões: {ga4.get('sessoes', 'N/D')} | "
+        f"Usuários: {ga4.get('usuarios', 'N/D')} | "
+        f"Pageviews: {ga4.get('pageviews', 'N/D')}\n"
+        f"  Taxa de rejeição: {ga4.get('bounce_rate', 'N/D')}% | "
+        f"Duração média: {ga4.get('duracao_media', 'N/D')}s\n"
+        f"  Canal principal: {top_canal}"
+    )
+
+    texto, erro = groq_chat(
+        system_prompt=(
+            "Você é um especialista em SEO e marketing digital da Leanttro. "
+            "Analise métricas de sites e dê diagnósticos diretos, acionáveis e encorajadores. "
+            "Use linguagem simples — o cliente não é técnico. "
+            "Sempre em português do Brasil."
+        ),
+        user_prompt=(
+            f"Analise as métricas do site da empresa '{nome_empresa}':\n\n"
+            f"{resumo}\n\n"
+            f"Escreva um diagnóstico com:\n"
+            f"1. O que está indo bem\n"
+            f"2. O principal ponto de atenção\n"
+            f"3. Duas ações concretas para o próximo mês\n\n"
+            f"Máximo 5 parágrafos curtos. Seja direto e positivo."
+        ),
+        max_tokens=500,
+    )
+    if erro:
+        return jsonify({"erro": erro}), 500
+    return jsonify({"analise": texto})
+
+
+# ── OAuth — Iniciar ───────────────────────────────────────────────────────
+
+@app.route("/api/metricas/<cliente_slug>/oauth/start")
+def metricas_oauth_start(cliente_slug):
+    if not GOOGLE_LIBS_OK:
+        return "Dependências Google não instaladas no servidor.", 500
+
+    cliente = query(
+        "SELECT id, metricas_ativo FROM clientes WHERE slug=%s",
+        (cliente_slug,), one=True
+    )
+    if not cliente:
+        abort(404)
+    if not cliente.get("metricas_ativo"):
+        abort(403)
+
+    # servico=gsc|ga4|all — pede todos por padrão (evita reconexão dupla)
+    servico = request.args.get("servico", "all")
+    scopes  = {"gsc": SCOPES_GSC, "ga4": SCOPES_GA4}.get(servico, SCOPES_ALL)
+
+    flow = _oauth_flow(scopes)
+    auth_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",  # garante que refresh_token seja sempre retornado
+    )
+
+    session["metricas_oauth_state"]  = state
+    session["metricas_oauth_slug"]   = cliente_slug
+    session["metricas_oauth_scopes"] = scopes
+
+    return redirect(auth_url)
+
+
+# ── OAuth — Callback ──────────────────────────────────────────────────────
+
+@app.route("/api/metricas/oauth/callback")
+def metricas_oauth_callback():
+    if not GOOGLE_LIBS_OK:
+        return "Dependências Google não instaladas no servidor.", 500
+
+    error        = request.args.get("error", "")
+    state        = request.args.get("state", "")
+    code         = request.args.get("code", "")
+    cliente_slug = session.get("metricas_oauth_slug", "")
+    scopes       = session.get("metricas_oauth_scopes", SCOPES_ALL)
+
+    if error:
+        return (
+            f'<p style="font-family:sans-serif;padding:2rem">Erro ao conectar com o Google: '
+            f'<b>{error}</b>.<br><br>'
+            f'<a href="/metricas/{cliente_slug}">← Voltar</a></p>'
+        ), 400
+
+    if not cliente_slug:
+        return (
+            '<p style="font-family:sans-serif;padding:2rem">Sessão expirada. '
+            'Feche esta aba e tente conectar novamente.</p>'
+        ), 400
+
+    cliente = query("SELECT id FROM clientes WHERE slug=%s", (cliente_slug,), one=True)
+    if not cliente:
+        abort(404)
+
+    try:
+        flow = _oauth_flow(scopes, state=state)
+        flow.fetch_token(code=code)
+        _save_creds(cliente["id"], flow.credentials)
+    except Exception as e:
+        return (
+            f'<p style="font-family:sans-serif;padding:2rem">Erro ao obter token do Google: '
+            f'<b>{e}</b>.<br><br>'
+            f'<a href="/metricas/{cliente_slug}">← Tentar novamente</a></p>'
+        ), 500
+
+    # Limpa variáveis de sessão do OAuth
+    for k in ("metricas_oauth_state", "metricas_oauth_slug", "metricas_oauth_scopes"):
+        session.pop(k, None)
+
+    return redirect(f"/metricas/{cliente_slug}")
+
+
+# ── Sync / Refresh forçado ────────────────────────────────────────────────
+
+@app.route("/api/metricas/<cliente_slug>/sync", methods=["POST"])
+def api_metricas_sync(cliente_slug):
+    cliente = query("SELECT id FROM clientes WHERE slug=%s", (cliente_slug,), one=True)
+    if not cliente:
+        return jsonify({"erro": "cliente não encontrado"}), 404
+
+    creds = _creds_prontas(cliente["id"])
+    if not creds:
+        return jsonify({
+            "ok": False, "conectado": False,
+            "erro": "credenciais inválidas ou expiradas — reconecte o Google"
+        })
+    return jsonify({"ok": True, "conectado": True})
+
+
+# ── Admin — Toggle métricas ───────────────────────────────────────────────
+
+@app.route("/api/admin/clientes/<int:cliente_id>/metricas/toggle", methods=["POST"])
+@login_required
+def api_admin_metricas_toggle(cliente_id):
+    """Liga/desliga o módulo de métricas premium para o cliente."""
+    row = query(
+        "SELECT metricas_ativo FROM clientes WHERE id=%s",
+        (cliente_id,), one=True
+    )
+    if not row:
+        return jsonify({"erro": "cliente não encontrado"}), 404
+    novo = not bool(row.get("metricas_ativo"))
+    query(
+        "UPDATE clientes SET metricas_ativo=%s WHERE id=%s",
+        (novo, cliente_id), commit=True
+    )
+    return jsonify({"ok": True, "ativo": novo})
+
+
+# ── Admin — Salvar GA4 property + GSC site ────────────────────────────────
+
+@app.route("/api/admin/clientes/<int:cliente_id>/metricas/ga4-property", methods=["POST"])
+@login_required
+def api_admin_metricas_config(cliente_id):
+    """Salva o GA4 Property ID e a URL do GSC para o cliente."""
+    d       = request.json or {}
+    ga4_id  = (d.get("ga4_property_id") or "").strip()
+    gsc_url = (d.get("gsc_site_url")    or "").strip()
+
+    if ga4_id and not ga4_id.startswith("properties/"):
+        return jsonify({
+            "erro": "ga4_property_id deve começar com 'properties/' "
+                    "(ex: properties/123456789)"
+        }), 400
+
+    # Garante barra no final da URL do GSC
+    if gsc_url and not gsc_url.endswith("/"):
+        gsc_url += "/"
+
+    query(
+        "UPDATE clientes SET ga4_property_id=%s, gsc_site_url=%s WHERE id=%s",
+        (ga4_id or None, gsc_url or None, cliente_id), commit=True
+    )
+    return jsonify({"ok": True, "ga4_property_id": ga4_id, "gsc_site_url": gsc_url})
+
+
+# ── Admin — Status do módulo de métricas ─────────────────────────────────
+
+@app.route("/api/admin/clientes/<int:cliente_id>/metricas/status")
+@login_required
+def api_admin_metricas_status(cliente_id):
+    """Retorna o status completo do módulo de métricas para o painel admin."""
+    row = query("""
+        SELECT metricas_ativo, ga4_property_id, gsc_site_url,
+               metricas_conectado_em,
+               (google_credentials IS NOT NULL) as google_conectado,
+               slug
+        FROM clientes WHERE id=%s
+    """, (cliente_id,), one=True)
+    if not row:
+        return jsonify({"erro": "cliente não encontrado"}), 404
+    data = dict(row)
+    if data.get("metricas_conectado_em"):
+        data["metricas_conectado_em"] = data["metricas_conectado_em"].isoformat()
+    return jsonify(data)
 
 # ═══════════════════════════════════════════════════════════
 
