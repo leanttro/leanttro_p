@@ -960,11 +960,12 @@ footer{
 
       <!-- Botão download PDF -->
       <div style="margin-top:16px">
-        <button onclick="downloadContratoPDF()"
-          style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text2);transition:.15s">
+        <a href="/api/propostas/{{ proposta.id }}/contrato/pdf?token={{ token }}"
+          download
+          style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text2);transition:.15s;text-decoration:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Baixar PDF
-        </button>
+        </a>
       </div>
 
     </div>
@@ -1220,7 +1221,6 @@ document.getElementById('msg-input').addEventListener('input', function() {
   update();
 })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 // ── Assinar contrato ──────────────────────────────────────
 async function assinarContrato() {
@@ -1272,56 +1272,6 @@ async function assinarContrato() {
   }
 }
 
-// ── Download PDF ──────────────────────────────────────────
-function downloadContratoPDF() {
-  const titulo   = {{ proposta.titulo | tojson }};
-  const cliente  = {{ (cliente.empresa or cliente.nome) | tojson }};
-  const texto    = {{ (proposta.contrato_texto or '') | tojson }};
-  const assinado = {{ 'true' if contrato.contrato_assinado else 'false' }};
-  const nomeSig  = {{ (contrato.contrato_nome_assinou or '') | tojson }};
-  const dataSig  = {{ (contrato.contrato_assinado_em[:10] if contrato.contrato_assinado_em else '') | tojson }};
-
-  // Converte quebras de linha em <br> para o html2pdf renderizar corretamente
-  const textoHtml = texto
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
-
-  const rodape = assinado
-    ? `<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ccc;font-size:11px;color:#666">
-        ✓ Assinado eletronicamente por <strong>${nomeSig}</strong> em ${dataSig.split('-').reverse().join('/')} — válido conforme Lei 14.063/2020
-       </div>`
-    : `<div style="margin-top:60px;padding-top:16px;border-top:1px solid #000;font-size:11px;color:#333">
-        Assinatura do Contratante: _____________________________ Data: ___/___/______
-       </div>`;
-
-  const conteudo = `
-    <div style="font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#111;padding:40px;width:700px;background:#fff">
-      <div style="text-align:center;margin-bottom:32px">
-        <div style="font-size:18px;font-weight:bold;color:#111">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</div>
-        <div style="font-size:12px;color:#555;margin-top:6px">${titulo} — ${cliente}</div>
-      </div>
-      <div style="font-size:12px;line-height:1.9;color:#222">${textoHtml}</div>
-      ${rodape}
-      <div style="margin-top:16px;font-size:10px;color:#999;text-align:center">Leanttro Tecnologia · CNPJ 63.556.406/0001-75 · São Paulo/SP · leanttro.com</div>
-    </div>`;
-
-  // Wrapper visível fora da tela — html2canvas precisa de elemento renderizável
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:fixed;left:0;top:0;width:700px;background:#fff;z-index:-9999;opacity:0;pointer-events:none';
-  wrapper.innerHTML = conteudo;
-  document.body.appendChild(wrapper);
-
-  const filename = `contrato-${titulo.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}.pdf`;
-
-  html2pdf().set({
-    margin:      [10, 10, 10, 10],
-    filename:    filename,
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(wrapper).save().then(() => document.body.removeChild(wrapper));
-}
 </script>
 </body>
 </html>
