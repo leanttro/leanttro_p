@@ -1072,11 +1072,33 @@ def portal_cliente_pin(token):
 #  PORTAL DO CLIENTE — por slug
 # ═══════════════════════════════════════════════════════════
 
-@app.route("/c/<slug>")
+@app.route("/c/<slug>", methods=["GET", "POST"])
 def portal_cliente_lista(slug):
     cliente = query("SELECT * FROM clientes WHERE slug = %s", (slug,), one=True)
     if not cliente:
         abort(404)
+
+    # ── Verificação de PIN ──────────────────────────────────
+    pin_do_cliente = cliente.get("pin_acesso") or ""
+    if pin_do_cliente:
+        chave_sessao = f"pin_ok_{cliente['id']}"
+        if not session.get(chave_sessao):
+            erro_pin = None
+            if request.method == "POST":
+                pin_digitado = request.form.get("pin", "").strip()
+                if pin_digitado == str(pin_do_cliente):
+                    session[chave_sessao] = True
+                else:
+                    erro_pin = "PIN incorreto. Tente novamente."
+            if not session.get(chave_sessao):
+                return render_template("portal/pin.html",
+                    token=slug,
+                    cliente_nome=cliente.get("nome") or "",
+                    logo_url=cliente.get("logo_url") or "",
+                    erro=erro_pin
+                )
+    # ────────────────────────────────────────────────────────
+
     propostas_raw = query("""
         SELECT p.*, COALESCE(SUM(s.quantidade * s.valor_unit), 0) as valor_total
         FROM propostas p
