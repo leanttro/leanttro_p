@@ -1718,7 +1718,14 @@ def metricas_oauth_callback():
     try:
         code_verifier = session.get("metricas_oauth_cv")
         flow = _oauth_flow(scopes, state=state, code_verifier=code_verifier)
-        flow.fetch_token(code=code)
+
+        # Usa authorization_response (igual ao app de referência que funciona)
+        auth_response = request.url.replace('http://', 'https://')
+        fetch_kwargs = {'authorization_response': auth_response}
+        if code_verifier:
+            fetch_kwargs['code_verifier'] = code_verifier
+
+        flow.fetch_token(**fetch_kwargs)
         _save_creds(cliente["id"], flow.credentials)
         print(f"[OAuth] Credenciais salvas com sucesso para cliente_id={cliente['id']} slug={cliente_slug}")
     except Exception as e:
@@ -1750,7 +1757,9 @@ def api_metricas_status(cliente_slug):
     )
     if not cliente:
         return jsonify({"erro": "cliente nao encontrado"}), 404
-    creds_ok = bool(_creds_prontas(cliente["id"])) if GOOGLE_LIBS_OK else False
+    creds = _get_creds(cliente["id"]) if GOOGLE_LIBS_OK else None
+    creds_ok = creds is not None and creds.valid
+    print(f"[status] slug={cliente_slug} creds={'ok' if creds else 'None'} valid={getattr(creds,'valid',False)}")
     return jsonify({
         "ativo": bool(cliente.get("metricas_ativo")),
         "google_conectado": creds_ok,
