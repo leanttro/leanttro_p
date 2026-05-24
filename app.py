@@ -48,6 +48,11 @@ except ImportError:
 
 load_dotenv()
 
+# Permite que o Google retorne escopos adicionais sem gerar erro
+# (ex: conectar GSC e GA4 juntos retorna ambos os escopos mesmo se só um foi pedido)
+import os as _os
+_os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "leanttro_portal_secret_troque_em_producao")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
@@ -84,6 +89,26 @@ def get_db():
             cursor_factory=psycopg2.extras.RealDictCursor
         )
     return g.db
+
+def _ensure_metricas_columns():
+    """Garante que as colunas do módulo de métricas existem no banco."""
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cols = [
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS google_credentials JSONB",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS metricas_ativo BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS metricas_conectado_em TIMESTAMP",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS ga4_property_id TEXT",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS gsc_site_url TEXT",
+        ]
+        for sql in cols:
+            cur.execute(sql)
+        db.commit()
+        print("[DB] Colunas de métricas verificadas/criadas OK")
+    except Exception as e:
+        print(f"[DB] Aviso ao verificar colunas de métricas: {e}")
+
 
 @app.teardown_appcontext
 def close_db(e=None):
@@ -1209,10 +1234,16 @@ def _save_creds(cliente_id, creds):
         "token_uri":     creds.token_uri,
         "scopes":        list(creds.scopes) if creds.scopes else SCOPES_ALL,
     }
-    query(
-        "UPDATE clientes SET google_credentials=%s, metricas_conectado_em=NOW() WHERE id=%s",
-        (json.dumps(cred_data), cliente_id), commit=True
-    )
+    try:
+        query(
+            "UPDATE clientes SET google_credentials=%s, metricas_conectado_em=NOW() WHERE id=%s",
+            (json.dumps(cred_data), cliente_id), commit=True
+        )
+        print(f"[OAuth] _save_creds OK para cliente_id={cliente_id} token={'sim' if creds.token else 'NAO'} refresh={'sim' if creds.refresh_token else 'NAO'}")
+    except Exception as e:
+        import traceback
+        print(f"[OAuth] _save_creds ERRO cliente_id={cliente_id}: {e}\n{traceback.format_exc()}")
+        raise
 
 
 def _refresh_creds(cliente_id, creds):
@@ -1400,6 +1431,8 @@ def api_metricas_gsc(cliente_slug):
         })
 
     except Exception as e:
+        import traceback
+        print(f"[GSC ERROR] slug={cliente_slug}: {e}\n{traceback.format_exc()}")
         return jsonify({"erro": str(e)}), 500
 
 
@@ -1675,7 +1708,10 @@ def metricas_oauth_callback():
         flow = _oauth_flow(scopes, state=state, code_verifier=code_verifier)
         flow.fetch_token(code=code)
         _save_creds(cliente["id"], flow.credentials)
+        print(f"[OAuth] Credenciais salvas com sucesso para cliente_id={cliente['id']} slug={cliente_slug}")
     except Exception as e:
+        import traceback
+        print(f"[OAuth ERROR] {e}\n{traceback.format_exc()}")
         return (
             f'<p style="font-family:sans-serif;padding:2rem">Erro ao obter token do Google: '
             f'<b>{e}</b>.<br><br>'
@@ -1794,6 +1830,19 @@ def api_admin_metricas_status(cliente_id):
     return jsonify(data)
 
 # ═══════════════════════════════════════════════════════════
+
+# Garante colunas de métricas no primeiro request de cada worker
+_metricas_cols_ok = False
+
+@app.before_request
+def _ensure_cols_once():
+    global _metricas_cols_ok
+    if not _metricas_cols_ok:
+        try:
+            _ensure_metricas_columns()
+            _metricas_cols_ok = True
+        except Exception as _e:
+            print(f"[DB] Aviso ao criar colunas: {_e}")
 
 if __name__ == "__main__":
     port  = int(os.getenv("PORT", 5002))
