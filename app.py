@@ -361,6 +361,16 @@ def api_proposta_get(pid):
     data["links"]     = [dict(l) for l in (query("SELECT * FROM links     WHERE proposta_id=%s ORDER BY ordem", (pid,)) or [])]
     data["mensagens"] = [dict(m) for m in (query("SELECT * FROM mensagens WHERE proposta_id=%s ORDER BY criado_em", (pid,)) or [])]
     data["metricas"]  = [dict(m) for m in (query("SELECT * FROM metricas  WHERE proposta_id=%s ORDER BY mes_ano DESC", (pid,)) or [])]
+    # Contrato
+    contrato = query("SELECT contrato_texto, contrato_tipo, contrato_duracao, contrato_assinado, contrato_assinado_em, contrato_ip, contrato_nome_assinou FROM propostas WHERE id=%s", (pid,), one=True)
+    if contrato:
+        data["contrato_texto"]        = contrato["contrato_texto"]
+        data["contrato_tipo"]         = contrato["contrato_tipo"]
+        data["contrato_duracao"]      = contrato["contrato_duracao"]
+        data["contrato_assinado"]     = contrato["contrato_assinado"]
+        data["contrato_assinado_em"]  = contrato["contrato_assinado_em"].isoformat() if contrato["contrato_assinado_em"] else None
+        data["contrato_ip"]           = contrato["contrato_ip"]
+        data["contrato_nome_assinou"] = contrato["contrato_nome_assinou"]
     # Serializa datas pra string
     for k, v in data.items():
         if hasattr(v, 'isoformat'):
@@ -648,6 +658,53 @@ def api_ia_gerar_mensagem():
     if erro: return jsonify({"erro": erro}), 500
     return jsonify({"texto": texto})
 
+@app.route("/api/ia/gerar-contrato", methods=["POST"])
+@login_required
+def api_ia_gerar_contrato():
+    """Gera texto de contrato via Groq com base nos dados da proposta"""
+    d = request.json or {}
+    cliente_nome    = d.get("cliente_nome", "")
+    cliente_empresa = d.get("cliente_empresa", "")
+    servicos        = d.get("servicos", "")
+    valor           = d.get("valor", "0")
+    forma_pgto      = d.get("forma_pagamento", "")
+    duracao         = d.get("duracao", "")
+    tipo            = d.get("tipo", "pontual")  # 'pontual' ou 'recorrente'
+    prazo           = d.get("prazo_entrega", "")
+
+    tipo_label = "prestação de serviço pontual" if tipo == "pontual" else "prestação de serviço recorrente/mensal"
+
+    prompt = f"""Gere um contrato de {tipo_label} com as seguintes informações:
+
+CONTRATANTE: {cliente_nome}{f' — {cliente_empresa}' if cliente_empresa else ''}
+CONTRATADA: Leanttro Tecnologia — CNPJ 63.556.406/0001-75 — São Paulo/SP
+SERVIÇOS: {servicos}
+VALOR: R$ {valor}{f' — {forma_pgto}' if forma_pgto else ''}
+{'DURAÇÃO: ' + duracao if duracao else ''}
+{'PRAZO DE ENTREGA: ' + prazo if prazo else ''}
+
+Escreva um contrato profissional e direto, com as seguintes cláusulas:
+1. Das Partes
+2. Do Objeto (serviços contratados detalhados)
+3. Do Valor e Forma de Pagamento
+4. {'Do Prazo de Entrega' if tipo == 'pontual' else 'Da Vigência e Renovação'}
+5. Das Obrigações da Contratada
+6. Das Obrigações do Contratante
+7. Da Propriedade Intelectual
+8. Da Rescisão
+9. Das Disposições Gerais (foro: São Paulo/SP)
+
+Linguagem: clara, direta, válida no Brasil. Sem formatação markdown, apenas texto corrido com títulos em MAIÚSCULO."""
+
+    texto, erro = groq_chat(
+        "Você é um especialista jurídico brasileiro. Escreva contratos de prestação de serviço claros, diretos e com validade legal. Sempre em português do Brasil.",
+        prompt,
+        max_tokens=2000
+    )
+    if erro:
+        return jsonify({"erro": erro}), 500
+    return jsonify({"texto": texto})
+
 @app.route("/api/ia/analisar-metricas", methods=["POST"])
 @login_required
 def api_ia_analisar_metricas():
@@ -700,6 +757,60 @@ def api_ia_resumir_cliente():
     )
     if erro: return jsonify({"erro": erro}), 500
     return jsonify({"resumo": texto})
+
+@app.route("/api/propostas/<int:pid>/assinar-contrato", methods=["POST"])
+def api_assinar_contrato(pid):
+    """Cliente assina o contrato — não requer login admin"""
+    d = request.json or {}
+    token = d.get("token", "")
+    nome  = d.get("nome", "").strip()
+
+    # Verifica que o token bate com a proposta
+    p = query("SELECT id, token, contrato_texto, contrato_assinado FROM propostas WHERE id=%s", (pid,), one=True)
+    if not p or p["token"] != token:
+        return jsonify({"erro": "Não autorizado"}), 403
+    if not p["contrato_texto"]:
+        return jsonify({"erro": "Contrato ainda não gerado"}), 400
+    if p["contrato_assinado"]:
+        return jsonify({"erro": "Contrato já assinado"}), 400
+    if not nome:
+        return jsonify({"erro": "Nome obrigatório para assinar"}), 400
+
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+
+    query("""
+        UPDATE propostas SET
+            contrato_assinado=TRUE,
+            contrato_assinado_em=NOW(),
+            contrato_ip=%s,
+            contrato_nome_assinou=%s
+        WHERE id=%s
+    """, (ip, nome, pid), commit=True)
+
+    return jsonify({"ok": True})
+
+@app.route("/api/propostas/<int:pid>/contrato", methods=["PUT"])
+@login_required
+def api_contrato_salvar(pid):
+    """Admin salva o texto e dados do contrato gerado"""
+    d = request.json or {}
+    query("""
+        UPDATE propostas SET
+            contrato_texto=%s,
+            contrato_duracao=%s,
+            contrato_tipo=%s,
+            contrato_assinado=FALSE,
+            contrato_assinado_em=NULL,
+            contrato_ip=NULL,
+            contrato_nome_assinou=NULL
+        WHERE id=%s
+    """, (
+        d.get("texto"),
+        d.get("duracao"),
+        d.get("tipo", "pontual"),
+        pid
+    ), commit=True)
+    return jsonify({"ok": True})
 
 # ═══════════════════════════════════════════════════════════
 #  API — TEMPLATES DO PORTAL
@@ -755,6 +866,11 @@ def portal_cliente(token):
     if not os.path.exists(pasta):
         template_path = "portal/portal_padrao.html"
 
+    contrato_row = query("SELECT contrato_texto, contrato_tipo, contrato_duracao, contrato_assinado, contrato_assinado_em, contrato_nome_assinou FROM propostas WHERE id=%s", (p["id"],), one=True)
+    contrato = dict(contrato_row) if contrato_row else {}
+    if contrato.get("contrato_assinado_em"):
+        contrato["contrato_assinado_em"] = contrato["contrato_assinado_em"].isoformat()
+
     return render_template(template_path,
         proposta=dict(p),
         cliente={"nome": p["cliente_nome"], "empresa": p["cliente_empresa"],
@@ -768,7 +884,8 @@ def portal_cliente(token):
         mensagens=[dict(m) for m in mensagens],
         metricas=[dict(m) for m in metricas],
         total=total,
-        token=token
+        token=token,
+        contrato=contrato
     )
 
 # ═══════════════════════════════════════════════════════════
