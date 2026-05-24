@@ -693,8 +693,8 @@ tr:hover td{background:#fafaf8}
           </div>
           <div class="field">
             <label>URL do site (GSC)</label>
-            <input id="mc-gsc" placeholder="sc-domain:seusite.com ou https://seusite.com/" type="text" style="font-family:monospace;font-size:.78rem">
-            <div class="field-hint">Exatamente como cadastrado no Search Console. <strong>Sem barra no final</strong> para domínios (<code style="font-size:.7rem;color:var(--accent)">sc-domain:seusite.com</code>).</div>
+            <input id="mc-gsc" placeholder="https://seusite.com ou sc-domain:seusite.com" type="text">
+            <div class="field-hint">Exatamente como cadastrado no Search Console. Sem barra no final.</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -1467,7 +1467,7 @@ async function carregarMetricasStatus(clienteId, slug) {
   try {
     const d = await fetch(`/api/admin/clientes/${clienteId}/metricas/status`).then(r => r.json());
     if (d.ga4_property_id) document.getElementById('mc-ga4').value = d.ga4_property_id;
-    if (d.gsc_site_url)    document.getElementById('mc-gsc').value = d.gsc_site_url;
+    if (d.gsc_site_url)    document.getElementById('mc-gsc').value = d.gsc_site_url.replace(/\/+$/, '');
     const pill = document.getElementById('mc-metricas-status');
     const toggleBtn = document.getElementById('mc-metricas-toggle-btn');
     if (d.metricas_ativo) {
@@ -1527,9 +1527,7 @@ async function salvarConfigMetricas() {
   const id  = document.getElementById('mc-id').value;
   const slug = document.getElementById('mc-slug').value.trim();
   const ga4 = document.getElementById('mc-ga4').value.trim();
-  let gsc = document.getElementById('mc-gsc').value.trim();
-  // sc-domain: properties não aceitam barra no final
-  if (gsc.startsWith('sc-domain:')) gsc = gsc.replace(/\/+$/, '');
+  const gsc = document.getElementById('mc-gsc').value.trim().replace(/\/+$/, '');
   if (!id) return toast('Salve o cliente antes de configurar as métricas', false);
   if (ga4 && !ga4.startsWith('properties/')) {
     return toast('GA4 Property ID deve começar com "properties/" — ex: properties/123456789', false);
