@@ -1255,7 +1255,10 @@ def _oauth_flow(scopes, state=None):
     kwargs = dict(scopes=scopes, redirect_uri=GOOGLE_REDIRECT)
     if state:
         kwargs["state"] = state
-    return Flow.from_client_config(config, **kwargs)
+    flow = Flow.from_client_config(config, **kwargs)
+    # Desabilita PKCE (code_verifier) — necessário para apps web server-side
+    flow.code_verifier = None
+    return flow
 
 
 # ── Rota principal do cliente ────────────────────────────────────────────
@@ -1682,6 +1685,26 @@ def metricas_oauth_callback():
 
 
 # ── Sync / Refresh forçado ────────────────────────────────────────────────
+
+@app.route("/api/metricas/<cliente_slug>/status")
+def api_metricas_status(cliente_slug):
+    """Retorna status de conexao Google para o cliente (usado pelo frontend de metricas)."""
+    cliente = query(
+        "SELECT id, metricas_ativo, ga4_property_id, gsc_site_url, "
+        "(google_credentials IS NOT NULL) as google_conectado "
+        "FROM clientes WHERE slug=%s",
+        (cliente_slug,), one=True
+    )
+    if not cliente:
+        return jsonify({"erro": "cliente nao encontrado"}), 404
+    creds_ok = bool(_creds_prontas(cliente["id"])) if GOOGLE_LIBS_OK else False
+    return jsonify({
+        "ativo": bool(cliente.get("metricas_ativo")),
+        "google_conectado": creds_ok,
+        "ga4_property_id": cliente.get("ga4_property_id"),
+        "gsc_site_url": cliente.get("gsc_site_url"),
+    })
+
 
 @app.route("/api/metricas/<cliente_slug>/sync", methods=["POST"])
 def api_metricas_sync(cliente_slug):
