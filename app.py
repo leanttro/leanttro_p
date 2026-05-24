@@ -19,6 +19,8 @@ import secrets
 import string
 import requests
 import json
+import unicodedata
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,15 +45,14 @@ BASE_URL          = os.getenv("BASE_URL", "http://localhost:5002")
 
 def get_db():
     if "db" not in g:
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise RuntimeError(
+                "DATABASE_URL nao configurada. "
+                "Defina a variavel de ambiente DATABASE_URL antes de iniciar o servidor."
+            )
         g.db = psycopg2.connect(
-            dsn=os.getenv("DATABASE_URL", ""),
-            cursor_factory=psycopg2.extras.RealDictCursor
-        ) if os.getenv("DATABASE_URL") else psycopg2.connect(
-            host     = os.getenv("DB_HOST", "213.199.56.207"),
-            port     = int(os.getenv("DB_PORT", 5453)),
-            dbname   = os.getenv("DB_NAME", "postgres"),
-            user     = os.getenv("DB_USER", "leanttro"),
-            password = os.getenv("DB_PASS", "Fin@2021"),
+            dsn=database_url,
             cursor_factory=psycopg2.extras.RealDictCursor
         )
     return g.db
@@ -81,6 +82,26 @@ def query(sql, params=(), one=False, commit=False):
 def gerar_token(n=14):
     chars = string.ascii_letters + string.digits
     return "".join(secrets.choice(chars) for _ in range(n))
+
+def gerar_slug(texto):
+    texto = unicodedata.normalize('NFKD', texto)
+    texto = texto.encode('ascii', 'ignore').decode('ascii')
+    texto = texto.lower().strip()
+    texto = re.sub(r'[^a-z0-9\s-]', '', texto)
+    texto = re.sub(r'[\s_-]+', '-', texto)
+    return texto.strip('-')[:80]
+
+def gerar_slug_unico(base):
+    """Gera slug único verificando colisões no banco."""
+    slug = gerar_slug(base)
+    if not slug:
+        slug = 'cliente'
+    candidato = slug
+    i = 2
+    while query('SELECT id FROM clientes WHERE slug = %s', (candidato,), one=True):
+        candidato = f'{slug}-{i}'
+        i += 1
+    return candidato
 
 # ═══════════════════════════════════════════════════════════
 #  AUTH
@@ -211,11 +232,15 @@ def api_cliente_criar():
     d = request.json or {}
     if not d.get("nome"):
         return jsonify({"erro": "Nome obrigatório"}), 400
+    # Gera slug baseado no nome/empresa e token único de acesso
+    base = d.get("empresa") or d["nome"]
+    slug = d.get("slug") or gerar_slug_unico(base)
+    token_cliente = gerar_token(20)
     row = query(
-        "INSERT INTO clientes (nome, empresa, email, whatsapp) VALUES (%s,%s,%s,%s) RETURNING id",
-        (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp")), commit=True
+        "INSERT INTO clientes (nome, empresa, email, whatsapp, slug, token_cliente) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
+        (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), slug, token_cliente), commit=True
     )
-    return jsonify({"ok": True, "id": row["id"] if row else None})
+    return jsonify({"ok": True, "id": row["id"] if row else None, "slug": slug, "token_cliente": token_cliente})
 
 @app.route("/api/clientes/<int:cid>", methods=["GET"])
 @login_required
@@ -228,9 +253,28 @@ def api_cliente_get(cid):
 @login_required
 def api_cliente_editar(cid):
     d = request.json or {}
-    query("UPDATE clientes SET nome=%s, empresa=%s, email=%s, whatsapp=%s WHERE id=%s",
-          (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), cid), commit=True)
-    return jsonify({"ok": True})
+    # Atualiza slug se nome/empresa mudar, verificando unicidade (excluindo o próprio cliente)
+    atual = query("SELECT slug, nome, empresa FROM clientes WHERE id=%s", (cid,), one=True)
+    base = d.get("empresa") or d["nome"]
+    if d.get("slug"):
+        novo_slug = d["slug"]
+        # Verifica unicidade do slug informado manualmente
+        conflito = query("SELECT id FROM clientes WHERE slug=%s AND id != %s", (novo_slug, cid), one=True)
+        if conflito:
+            return jsonify({"erro": "Slug já em uso por outro cliente"}), 409
+    elif atual and (d["nome"] != atual["nome"] or d.get("empresa") != atual["empresa"]):
+        base_slug = gerar_slug(base)
+        candidato = base_slug
+        i = 2
+        while query("SELECT id FROM clientes WHERE slug=%s AND id != %s", (candidato, cid), one=True):
+            candidato = f"{base_slug}-{i}"
+            i += 1
+        novo_slug = candidato
+    else:
+        novo_slug = atual["slug"] if atual else gerar_slug_unico(base)
+    query("UPDATE clientes SET nome=%s, empresa=%s, email=%s, whatsapp=%s, slug=%s WHERE id=%s",
+          (d["nome"], d.get("empresa"), d.get("email"), d.get("whatsapp"), novo_slug, cid), commit=True)
+    return jsonify({"ok": True, "slug": novo_slug})
 
 @app.route("/api/clientes/<int:cid>", methods=["DELETE"])
 @login_required
@@ -263,13 +307,13 @@ def api_proposta_criar():
     row = query("""
         INSERT INTO propostas
             (cliente_id, titulo, descricao, validade, prazo_entrega,
-             forma_pagamento, status, cor_tema, mensagem_final, token)
-        VALUES (%s,%s,%s,%s,%s,%s,'rascunho',%s,%s,%s) RETURNING id, token
+             forma_pagamento, status, cor_tema, mensagem_final, token, template)
+        VALUES (%s,%s,%s,%s,%s,%s,'rascunho',%s,%s,%s,%s) RETURNING id, token
     """, (
         d["cliente_id"], d["titulo"], d.get("descricao"),
         d.get("validade") or None, d.get("prazo_entrega") or None,
         d.get("forma_pagamento"), d.get("cor_tema", "#c17f3a"),
-        d.get("mensagem_final"), token
+        d.get("mensagem_final"), token, d.get("template", "portal_padrao")
     ), commit=True)
     return jsonify({"ok": True, "id": row["id"], "token": row["token"]})
 
@@ -305,13 +349,14 @@ def api_proposta_editar(pid):
             cliente_id=%s, titulo=%s, descricao=%s,
             validade=%s, prazo_entrega=%s, forma_pagamento=%s,
             status=%s, cor_tema=%s, mensagem_final=%s,
-            atualizado_em=NOW()
+            template=%s, atualizado_em=NOW()
         WHERE id=%s
     """, (
         d["cliente_id"], d["titulo"], d.get("descricao"),
         d.get("validade") or None, d.get("prazo_entrega") or None,
         d.get("forma_pagamento"), d.get("status", "rascunho"),
-        d.get("cor_tema", "#c17f3a"), d.get("mensagem_final"), pid
+        d.get("cor_tema", "#c17f3a"), d.get("mensagem_final"),
+        d.get("template", "portal_padrao"), pid
     ), commit=True)
 
     # Reescreve serviços
@@ -685,6 +730,45 @@ def portal_cliente(token):
         total=total,
         token=token
     )
+
+# ═══════════════════════════════════════════════════════════
+#  PORTAL DO CLIENTE — por slug
+# ═══════════════════════════════════════════════════════════
+
+@app.route("/c/<slug>")
+def portal_cliente_lista(slug):
+    cliente = query("SELECT * FROM clientes WHERE slug = %s", (slug,), one=True)
+    if not cliente:
+        abort(404)
+    propostas_raw = query("""
+        SELECT p.*, COALESCE(SUM(s.quantidade * s.valor_unit), 0) as valor_total
+        FROM propostas p
+        LEFT JOIN servicos s ON s.proposta_id = p.id
+        WHERE p.cliente_id = %s AND p.status != 'rascunho'
+        GROUP BY p.id
+        ORDER BY p.criado_em DESC
+    """, (cliente["id"],)) or []
+    propostas = [dict(p) for p in propostas_raw]
+    # Serializa datas
+    for p in propostas:
+        for k, v in p.items():
+            if hasattr(v, 'isoformat'):
+                p[k] = v.isoformat()
+    return render_template("portal/portal_cliente.html",
+        cliente=dict(cliente),
+        propostas=propostas
+    )
+
+@app.route("/c/<slug>/<token>")
+def portal_cliente_redirecionar(slug, token):
+    row = query("""
+        SELECT p.token FROM propostas p
+        JOIN clientes c ON c.id = p.cliente_id
+        WHERE c.slug = %s AND p.token = %s
+    """, (slug, token), one=True)
+    if not row:
+        abort(404)
+    return redirect(f"/p/{token}")
 
 # ═══════════════════════════════════════════════════════════
 #  ROTA RAIZ
