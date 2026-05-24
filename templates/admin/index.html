@@ -34,7 +34,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 /* ── SIDEBAR ── */
 #sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:.25s}
-.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center}
 .sb-logo-mark{width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-logo-mark svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5}
 .sb-logo-text{font-weight:700;font-size:.9rem;letter-spacing:-.3px;color:var(--text)}
@@ -231,10 +231,7 @@ tr:hover td{background:#fafaf8}
 <!-- SIDEBAR -->
 <aside id="sidebar">
   <div class="sb-logo">
-    <div class="sb-logo-mark">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-    </div>
-    <div class="sb-logo-text">Leanttro<span>Portal</span></div>
+    <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:28px;width:auto;object-fit:contain">
   </div>
   <nav class="sb-nav">
     <div class="sb-section">Principal</div>
@@ -366,7 +363,7 @@ tr:hover td{background:#fafaf8}
           </div>
         </div>
         <table>
-          <thead><tr><th>Nome</th><th>Empresa</th><th>E-mail</th><th>WhatsApp</th><th>Propostas</th><th>Portal</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Empresa</th><th>E-mail</th><th>WhatsApp</th><th>Propostas</th><th></th></tr></thead>
           <tbody id="tb-clientes">
             <tr><td colspan="6"><div class="empty"><p>Carregando...</p></div></td></tr>
           </tbody>
@@ -603,12 +600,13 @@ tr:hover td{background:#fafaf8}
       <div class="field"><label>WhatsApp</label><input id="mc-whatsapp" placeholder="(11) 99999-9999"></div>
     </div>
     <div class="form-grid"><div class="field"><label>E-mail</label><input id="mc-email" type="email" placeholder="cliente@empresa.com"></div></div>
+    <div class="form-grid"><div class="field"><label>Logo do cliente (URL)</label><input id="mc-logo" type="url" placeholder="https://exemplo.com/logo.png"></div></div>
     <div class="form-grid c2">
-      <div class="field"><label>Slug (URL)</label><input id="mc-slug" placeholder="ex: joao-silva" style="font-family:monospace;font-size:.8rem"></div>
+      <div class="field"><label>Slug (URL do portal)</label><input id="mc-slug" placeholder="ex: joao-silva" style="font-family:monospace;font-size:.8rem"></div>
       <div class="field" id="mc-link-wrap" style="display:none"><label>Link do portal</label>
         <div style="display:flex;align-items:center;gap:6px">
           <input id="mc-link" readonly style="font-size:.75rem;color:var(--accent);background:var(--accent-light);border-color:transparent;cursor:pointer" onclick="this.select()">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="copiarLink()" title="Copiar link">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="copiarLinkCliente()" title="Copiar">
             <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>
         </div>
@@ -714,7 +712,6 @@ async function carregarClientes() {
       <td>${c.email||'—'}</td>
       <td>${c.whatsapp||'—'}</td>
       <td><span class="td-muted">${c.total_propostas||0} proposta(s)</span></td>
-      <td>${c.slug ? `<a href="/c/${c.slug}" target="_blank" class="td-muted" style="color:var(--accent);font-family:monospace;font-size:.75rem">/c/${c.slug}</a>` : '<span class="td-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-ghost btn-xs" onclick="editarCliente(${c.id})">Editar</button>
       </div></td>
@@ -733,7 +730,7 @@ async function carregarOpcoesClientes() {
 function novoCliente() {
   document.getElementById('mc-titulo').textContent = 'Novo Cliente';
   document.getElementById('mc-id').value = '';
-  ['mc-nome','mc-empresa','mc-email','mc-whatsapp','mc-slug'].forEach(id => document.getElementById(id).value='');
+  ['mc-nome','mc-empresa','mc-email','mc-whatsapp','mc-slug','mc-logo'].forEach(id => document.getElementById(id).value='');
   document.getElementById('mc-btn-del').style.display = 'none';
   document.getElementById('mc-link-wrap').style.display = 'none';
   abrir('modal-cliente');
@@ -748,9 +745,9 @@ async function editarCliente(id) {
   document.getElementById('mc-email').value = c.email||'';
   document.getElementById('mc-whatsapp').value = c.whatsapp||'';
   document.getElementById('mc-slug').value = c.slug||'';
+  document.getElementById('mc-logo').value = c.logo_url||'';
   if(c.slug) {
-    const link = `${HOST}/c/${c.slug}`;
-    document.getElementById('mc-link').value = link;
+    document.getElementById('mc-link').value = `${HOST}/c/${c.slug}`;
     document.getElementById('mc-link-wrap').style.display = '';
   } else {
     document.getElementById('mc-link-wrap').style.display = 'none';
@@ -761,12 +758,15 @@ async function editarCliente(id) {
 
 async function salvarCliente() {
   const id = document.getElementById('mc-id').value;
+  const logoVal = document.getElementById('mc-logo').value.trim();
+  const slugVal = document.getElementById('mc-slug').value.trim();
   const body = {
     nome: document.getElementById('mc-nome').value.trim(),
     empresa: document.getElementById('mc-empresa').value.trim(),
     email: document.getElementById('mc-email').value.trim(),
     whatsapp: document.getElementById('mc-whatsapp').value.trim(),
-    slug: document.getElementById('mc-slug').value.trim() || undefined
+    ...(logoVal && {logo_url: logoVal}),
+    ...(slugVal && {slug: slugVal})
   };
   if(!body.nome) return toast('Nome é obrigatório', false);
   const url = id ? `/api/clientes/${id}` : '/api/clientes';
@@ -780,9 +780,8 @@ async function salvarCliente() {
   carregarOpcoesClientes();
 }
 
-function copiarLink() {
-  const val = document.getElementById('mc-link').value;
-  navigator.clipboard.writeText(val).then(() => toast('Link copiado!'));
+function copiarLinkCliente() {
+  navigator.clipboard.writeText(document.getElementById('mc-link').value).then(() => toast('Link copiado!'));
 }
 
 async function deletarCliente() {
