@@ -402,6 +402,7 @@ tr:hover td{background:#fafaf8}
       <button class="tab-btn" onclick="tab(this,'tab-midias')">Mídias & Links</button>
       <button class="tab-btn" onclick="tab(this,'tab-metricas')">Métricas</button>
       <button class="tab-btn" onclick="tab(this,'tab-mensagens')">Mensagens</button>
+      <button class="tab-btn" onclick="tab(this,'tab-contrato')">Contrato</button>
       <button class="tab-btn" onclick="tab(this,'tab-ia')">✦ IA</button>
     </div>
 
@@ -551,6 +552,48 @@ tr:hover td{background:#fafaf8}
       <div class="msg-input-row">
         <textarea id="msg-texto" placeholder="Escreva uma mensagem para o cliente..."></textarea>
         <button class="btn btn-primary" onclick="enviarMensagem()" style="align-self:flex-end">Enviar</button>
+      </div>
+    </div>
+
+    <!-- TAB: CONTRATO -->
+    <div class="tab-pane" id="tab-contrato">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="lbl" style="display:block;font-size:.68rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text2);margin-bottom:5px">Tipo de contrato</label>
+            <select id="ct-tipo" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.82rem;font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);outline:none">
+              <option value="pontual">Pontual (projeto único)</option>
+              <option value="recorrente">Recorrente (mensal)</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" style="display:block;font-size:.68rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text2);margin-bottom:5px">Duração / vigência</label>
+            <input id="ct-duracao" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.82rem;font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);outline:none" type="text" placeholder="Ex: 30 dias / 12 meses">
+          </div>
+        </div>
+
+        <button onclick="gerarContrato()" id="btn-gerar-contrato"
+          style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:.84rem;font-weight:700;cursor:pointer;align-self:flex-start;font-family:'Montserrat',sans-serif">
+          ✨ Gerar contrato com IA
+        </button>
+
+        <div>
+          <label style="display:block;font-size:.68rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text2);margin-bottom:5px">Texto do contrato</label>
+          <textarea id="ct-texto" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.8rem;font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);outline:none;resize:vertical;line-height:1.7" rows="18"
+            placeholder="O contrato gerado aparece aqui. Você pode editar antes de salvar."></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center">
+          <button onclick="salvarContrato()" id="btn-salvar-contrato"
+            style="padding:10px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.84rem;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">
+            Salvar e publicar no portal
+          </button>
+          <div id="ct-msg" style="font-size:.8rem"></div>
+        </div>
+
+        <!-- Status de assinatura -->
+        <div id="ct-status"></div>
       </div>
     </div>
 
@@ -830,6 +873,12 @@ async function novaProposta() {
   document.getElementById('mp-btn-del').style.display = 'none';
   document.getElementById('mp-btn-dup').style.display = 'none';
   limparListas();
+  // Contrato
+  document.getElementById('ct-texto').value = '';
+  document.getElementById('ct-duracao').value = '';
+  document.getElementById('ct-tipo').value = 'pontual';
+  document.getElementById('ct-msg').textContent = '';
+  document.getElementById('ct-status').innerHTML = '';
   // Ativa primeira tab
   document.querySelectorAll('#modal-proposta .tab-btn')[0].click();
   abrir('modal-proposta');
@@ -868,6 +917,25 @@ async function editarProposta(id) {
   (p.metricas||[]).forEach(m => addMetrica(m));
   carregarMensagens(id);
   atualizarTotal();
+
+  // Contrato
+  document.getElementById('ct-texto').value   = p.contrato_texto   || '';
+  document.getElementById('ct-duracao').value = p.contrato_duracao  || '';
+  document.getElementById('ct-tipo').value    = p.contrato_tipo     || 'pontual';
+  document.getElementById('ct-msg').textContent = '';
+  const ctStatus = document.getElementById('ct-status');
+  if (p.contrato_assinado) {
+    ctStatus.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;font-size:.82rem;color:#15803d">
+      ✓ <strong>Assinado</strong> por ${p.contrato_nome_assinou} em ${(p.contrato_assinado_em||'').slice(0,10).split('-').reverse().join('/')} — IP: ${p.contrato_ip||''}
+    </div>`;
+  } else if (p.contrato_texto) {
+    ctStatus.innerHTML = `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;font-size:.82rem;color:#92400e">
+      ⏳ Aguardando assinatura do cliente
+    </div>`;
+  } else {
+    ctStatus.innerHTML = '';
+  }
+
   document.querySelectorAll('#modal-proposta .tab-btn')[0].click();
   abrir('modal-proposta');
 }
@@ -1226,6 +1294,72 @@ async function iaResumirCliente() {
   const d = await chamadaIA('/api/ia/resumir-cliente', {proposta_id: _pid}, 'resumo');
   if(!d) return;
   document.getElementById('ia-result').textContent = d.resumo;
+}
+
+// ── Gerar contrato via Groq ───────────────────────────────
+async function gerarContrato() {
+  const btn = document.getElementById('btn-gerar-contrato');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+
+  const titulo    = document.getElementById('mp-titulo').value;
+  const clienteNome = document.getElementById('mp-cliente').options[document.getElementById('mp-cliente').selectedIndex]?.text || '';
+  const valor     = document.getElementById('total-display')?.textContent?.replace(/\D/g,'') || '0';
+  const formaPgto = document.getElementById('mp-pagamento')?.value || '';
+  const prazo     = document.getElementById('mp-prazo')?.value || '';
+
+  const linhasServico = document.querySelectorAll('.servico-row');
+  const servicosTexto = Array.from(linhasServico)
+    .map(r => r.querySelector('.s-nome')?.value).filter(Boolean).join(', ');
+
+  const res = await fetch('/api/ia/gerar-contrato', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      cliente_nome:    clienteNome.split(' — ')[0].trim(),
+      cliente_empresa: clienteNome.split(' — ')[1]?.trim() || '',
+      servicos:        servicosTexto || titulo,
+      valor:           valor,
+      forma_pagamento: formaPgto,
+      duracao:         document.getElementById('ct-duracao').value,
+      tipo:            document.getElementById('ct-tipo').value,
+      prazo_entrega:   prazo
+    })
+  });
+  const data = await res.json();
+  btn.disabled = false;
+  btn.textContent = '✨ Gerar contrato com IA';
+
+  if (data.texto) {
+    document.getElementById('ct-texto').value = data.texto;
+  } else {
+    alert('Erro ao gerar contrato: ' + (data.erro || 'tente novamente'));
+  }
+}
+
+// ── Salvar contrato ───────────────────────────────────────
+async function salvarContrato() {
+  const texto   = document.getElementById('ct-texto').value.trim();
+  const duracao = document.getElementById('ct-duracao').value.trim();
+  const tipo    = document.getElementById('ct-tipo').value;
+  const msg     = document.getElementById('ct-msg');
+
+  if (!texto) { msg.style.color='#dc2626'; msg.textContent='Cole ou gere o texto do contrato.'; return; }
+
+  const res = await fetch(`/api/propostas/${_pid}/contrato`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ texto, duracao, tipo })
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    msg.style.color   = '#16a34a';
+    msg.textContent   = '✓ Contrato salvo e visível no portal do cliente';
+  } else {
+    msg.style.color   = '#dc2626';
+    msg.textContent   = 'Erro ao salvar: ' + (data.erro || 'tente novamente');
+  }
 }
 </script>
 </body>
