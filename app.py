@@ -7,7 +7,8 @@ from flask import (
     Flask, render_template, request, jsonify,
     redirect, session, g, abort, url_for, Response
 )
-from weasyprint import HTML as WeasyHTML
+from xhtml2pdf import pisa
+import io
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
@@ -926,7 +927,9 @@ def api_contrato_pdf(pid):
 </body>
 </html>"""
 
-    pdf_bytes = WeasyHTML(string=html_content).write_pdf()
+    pdf_buffer = io.BytesIO()
+    pisa.CreatePDF(io.StringIO(html_content), dest=pdf_buffer)
+    pdf_bytes = pdf_buffer.getvalue()
     filename  = f"contrato-{titulo.lower().replace(' ', '-')}.pdf"
     filename  = re.sub(r'[^a-z0-9-]', '', filename)
 
