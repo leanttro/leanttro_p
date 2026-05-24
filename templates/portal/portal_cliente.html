@@ -164,10 +164,7 @@ footer a:hover{color:var(--accent)}
 <!-- HEADER -->
 <header>
   <a href="#" class="logo">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-    </div>
-    <div class="logo-text">Lean<span>ttro</span></div>
+    <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:26px;width:auto;object-fit:contain">
   </a>
   <div class="header-right">
     <span class="header-tag">Área do Cliente</span>
@@ -177,6 +174,11 @@ footer a:hover{color:var(--accent)}
 <!-- HERO -->
 <div class="hero">
   <div class="hero-inner">
+    {% if cliente.logo_url %}
+    <div style="margin-bottom:20px">
+      <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}" style="max-height:60px;max-width:200px;object-fit:contain">
+    </div>
+    {% endif %}
     <div class="hero-label">Portal de Projetos</div>
     <h1 class="hero-title">
       Olá, <span>{{ cliente.nome.split()[0] }}</span> 👋
