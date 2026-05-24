@@ -190,7 +190,7 @@ h1{
     Digite seu PIN de 4 dígitos para continuar.
   </p>
 
-  <form method="POST" action="/p/{{ token }}" id="pin-form">
+  <form method="POST" action="{{ form_action if form_action else '/p/' ~ token }}" id="pin-form">
     <div class="pin-row">
       <input class="pin-digit" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" id="d0">
       <input class="pin-digit" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" id="d1">
