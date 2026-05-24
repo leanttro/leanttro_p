@@ -670,6 +670,43 @@ tr:hover td{background:#fafaf8}
       </div>
     </div>
   </div>
+
+    <!-- ── MÉTRICAS PREMIUM ── -->
+    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:6px">
+      <div style="background:var(--bg);padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span style="font-size:.7rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2)">Métricas Premium</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="mc-metricas-status" style="font-size:.65rem;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--surface2);color:var(--text3)">Desativado</span>
+          <button type="button" id="mc-metricas-toggle-btn" onclick="toggleMetricas()" class="btn btn-secondary btn-xs" style="display:none">Ativar</button>
+          <a id="mc-metricas-link" href="#" target="_blank" class="btn btn-ghost btn-xs" style="display:none;font-size:.68rem">Ver como cliente →</a>
+        </div>
+      </div>
+      <div style="padding:14px">
+        <div class="form-grid c2">
+          <div class="field">
+            <label>GA4 Property ID</label>
+            <input id="mc-ga4" placeholder="properties/123456789" style="font-family:monospace;font-size:.78rem">
+            <div class="field-hint">Admin → Property Settings → Property ID. Formato: <code style="font-size:.7rem;color:var(--accent)">properties/XXXXXXXXX</code></div>
+          </div>
+          <div class="field">
+            <label>URL do site (GSC)</label>
+            <input id="mc-gsc" placeholder="https://seusite.com/" type="url">
+            <div class="field-hint">Exatamente como cadastrado no Search Console (com / no final).</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div id="mc-metricas-conexao" style="font-size:.72rem;color:var(--text3)">—</div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="salvarConfigMetricas()">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Salvar configuração
+          </button>
+        </div>
+      </div>
+    </div>
+
   <div class="modal-foot">
     <div class="left">
       <button class="btn btn-danger btn-sm" id="mc-btn-del" onclick="deletarCliente()" style="display:none">Excluir</button>
@@ -791,6 +828,14 @@ function novoCliente() {
   document.getElementById('mc-btn-del').style.display = 'none';
   document.getElementById('mc-link-wrap').style.display = 'none';
   document.getElementById('mc-pin-status-wrap').style.display = 'none';
+  // Reset métricas
+  document.getElementById('mc-ga4').value = '';
+  document.getElementById('mc-gsc').value = '';
+  document.getElementById('mc-metricas-status').textContent = 'Desativado';
+  document.getElementById('mc-metricas-status').style.cssText = 'font-size:.65rem;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--surface2);color:var(--text3)';
+  document.getElementById('mc-metricas-toggle-btn').style.display = 'none';
+  document.getElementById('mc-metricas-link').style.display = 'none';
+  document.getElementById('mc-metricas-conexao').textContent = '—';
   abrir('modal-cliente');
 }
 
@@ -823,6 +868,8 @@ async function editarCliente(id) {
     document.getElementById('mc-link-wrap').style.display = 'none';
   }
   document.getElementById('mc-btn-del').style.display = 'inline-flex';
+  // Carrega status métricas premium
+  carregarMetricasStatus(id, c.slug);
   abrir('modal-cliente');
 }
 
@@ -1404,6 +1451,102 @@ async function salvarContrato() {
   } else {
     msg.style.color   = '#dc2626';
     msg.textContent   = 'Erro ao salvar: ' + (data.erro || 'tente novamente');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  MÉTRICAS PREMIUM
+// ════════════════════════════════════════════════════════
+
+async function carregarMetricasStatus(clienteId, slug) {
+  document.getElementById('mc-ga4').value = '';
+  document.getElementById('mc-gsc').value = '';
+  document.getElementById('mc-metricas-conexao').textContent = '—';
+  document.getElementById('mc-metricas-toggle-btn').style.display = 'none';
+  document.getElementById('mc-metricas-link').style.display = 'none';
+  try {
+    const d = await fetch(`/api/admin/clientes/${clienteId}/metricas/status`).then(r => r.json());
+    if (d.ga4_property_id) document.getElementById('mc-ga4').value = d.ga4_property_id;
+    if (d.gsc_site_url)    document.getElementById('mc-gsc').value = d.gsc_site_url;
+    const pill = document.getElementById('mc-metricas-status');
+    const toggleBtn = document.getElementById('mc-metricas-toggle-btn');
+    if (d.metricas_ativo) {
+      pill.textContent = 'Ativo';
+      pill.style.cssText = 'font-size:.65rem;font-weight:700;padding:2px 9px;border-radius:20px;background:#f0fdf4;color:#16a34a';
+      toggleBtn.textContent = 'Desativar';
+      toggleBtn.className = 'btn btn-danger btn-xs';
+    } else {
+      pill.textContent = 'Desativado';
+      pill.style.cssText = 'font-size:.65rem;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--surface2);color:var(--text3)';
+      toggleBtn.textContent = 'Ativar';
+      toggleBtn.className = 'btn btn-success btn-xs';
+    }
+    toggleBtn.style.display = 'inline-flex';
+    if (slug) {
+      const link = document.getElementById('mc-metricas-link');
+      link.href = `/metricas/${slug}`;
+      link.style.display = 'inline-flex';
+    }
+    const conexaoEl = document.getElementById('mc-metricas-conexao');
+    if (d.google_conectado) {
+      const data = d.metricas_conectado_em ? new Date(d.metricas_conectado_em).toLocaleDateString('pt-BR') : '—';
+      conexaoEl.innerHTML = `<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:#16a34a;fill:none;stroke-width:2.5;display:inline-block;vertical-align:middle;margin-right:4px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Google conectado em ${data}`;
+      conexaoEl.style.color = '#16a34a';
+    } else {
+      conexaoEl.textContent = 'Google não conectado — o cliente conecta ao acessar /metricas/' + (slug || '...');
+      conexaoEl.style.color = 'var(--text3)';
+    }
+  } catch(e) {
+    document.getElementById('mc-metricas-conexao').textContent = 'Erro ao carregar status';
+  }
+}
+
+async function toggleMetricas() {
+  const id = document.getElementById('mc-id').value;
+  const slug = document.getElementById('mc-slug').value.trim();
+  if (!id) return toast('Salve o cliente antes de alterar as métricas', false);
+  const btn = document.getElementById('mc-metricas-toggle-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/admin/clientes/${id}/metricas/toggle`, { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) {
+      toast(d.ativo ? '✓ Métricas ativadas para este cliente' : 'Métricas desativadas');
+      carregarMetricasStatus(id, slug);
+    } else {
+      toast(d.erro || 'Erro ao alternar', false);
+    }
+  } catch(e) {
+    toast('Erro de conexão', false);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function salvarConfigMetricas() {
+  const id  = document.getElementById('mc-id').value;
+  const slug = document.getElementById('mc-slug').value.trim();
+  const ga4 = document.getElementById('mc-ga4').value.trim();
+  const gsc = document.getElementById('mc-gsc').value.trim();
+  if (!id) return toast('Salve o cliente antes de configurar as métricas', false);
+  if (ga4 && !ga4.startsWith('properties/')) {
+    return toast('GA4 Property ID deve começar com "properties/" — ex: properties/123456789', false);
+  }
+  try {
+    const r = await fetch(`/api/admin/clientes/${id}/metricas/ga4-property`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ga4_property_id: ga4, gsc_site_url: gsc })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('✓ Configuração salva');
+      carregarMetricasStatus(id, slug);
+    } else {
+      toast(d.erro || 'Erro ao salvar', false);
+    }
+  } catch(e) {
+    toast('Erro de conexão', false);
   }
 }
 </script>
