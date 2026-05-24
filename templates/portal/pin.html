@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acesso seguro — Leanttro</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f0f0f;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 24px;
+  }
+
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 24px 48px rgba(0,0,0,.5);
+  }
+
+  {% if logo_url %}
+  .logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-bottom: 24px;
+  }
+  {% endif %}
+
+  .lock-icon {
+    width: 52px;
+    height: 52px;
+    background: #c17f3a18;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 22px;
+  }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f0f0f0;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  /* ── Inputs de dígito ── */
+  .pin-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .pin-digit {
+    width: 60px;
+    height: 68px;
+    background: #111;
+    border: 2px solid #333;
+    border-radius: 10px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f0f0f0;
+    text-align: center;
+    caret-color: #c17f3a;
+    transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none;
+    outline: none;
+  }
+
+  .pin-digit:focus {
+    border-color: #c17f3a;
+    box-shadow: 0 0 0 3px #c17f3a22;
+  }
+
+  /* Campo hidden que vai pro form */
+  #pin-hidden { display: none; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: #c17f3a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    letter-spacing: .3px;
+  }
+  .btn:hover  { background: #d4924b; }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { background: #444; cursor: not-allowed; }
+
+  .erro {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: #ff4d4d18;
+    border: 1px solid #ff4d4d44;
+    border-radius: 8px;
+    color: #ff7070;
+    font-size: 13px;
+  }
+
+  .footer {
+    margin-top: 32px;
+    font-size: 11px;
+    color: #3a3a3a;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  {% if logo_url %}
+    <img src="{{ logo_url }}" alt="Logo" class="logo">
+  {% else %}
+    <div class="lock-icon">🔒</div>
+  {% endif %}
+
+  <h1>Acesso seguro</h1>
+  <p class="subtitle">
+    {% if cliente_nome %}
+      Olá, <strong style="color:#c17f3a">{{ cliente_nome }}</strong>!<br>
+    {% endif %}
+    Digite seu PIN de 4 dígitos para continuar.
+  </p>
+
+  <form method="POST" action="/p/{{ token }}" id="pin-form">
+    <div class="pin-row">
+      <input class="pin-digit" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" id="d0">
+      <input class="pin-digit" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" id="d1">
+      <input class="pin-digit" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" id="d2">
+      <input class="pin-digit" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" id="d3">
+    </div>
+    <input type="hidden" name="pin" id="pin-hidden">
+    <button type="submit" class="btn" id="btn-entrar" disabled>Entrar</button>
+  </form>
+
+  {% if erro %}
+    <div class="erro">{{ erro }}</div>
+  {% endif %}
+
+  <p class="footer">Portal seguro · Leanttro Tecnologia</p>
+</div>
+
+<script>
+  const digits  = [d0, d1, d2, d3];
+  const hidden  = document.getElementById('pin-hidden');
+  const btn     = document.getElementById('btn-entrar');
+  const form    = document.getElementById('pin-form');
+
+  function update() {
+    const val = digits.map(d => d.value).join('');
+    hidden.value = val;
+    btn.disabled = val.length < 4;
+  }
+
+  digits.forEach((el, i) => {
+    el.addEventListener('input', () => {
+      // Aceita só número
+      el.value = el.value.replace(/\D/g, '').slice(-1);
+      update();
+      if (el.value && i < 3) digits[i + 1].focus();
+    });
+
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !el.value && i > 0) {
+        digits[i - 1].focus();
+        digits[i - 1].value = '';
+        update();
+      }
+    });
+
+    // Paste no primeiro campo
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      digits.forEach((d, j) => { d.value = text[j] || ''; });
+      update();
+      const next = Math.min(text.length, 3);
+      digits[next].focus();
+    });
+  });
+
+  // Submete ao preencher o último dígito
+  digits[3].addEventListener('input', () => {
+    if (digits[3].value) form.requestSubmit?.() || form.submit();
+  });
+
+  // Foca no primeiro campo ao carregar
+  digits[0].focus();
+
+  {% if erro %}
+    // Limpa os campos após erro
+    digits.forEach(d => d.value = '');
+    digits[0].focus();
+  {% endif %}
+</script>
+</body>
+</html>
