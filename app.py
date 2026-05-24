@@ -884,7 +884,7 @@ def portal_cliente(token):
         mensagens=[dict(m) for m in mensagens],
         metricas=[dict(m) for m in metricas],
         total=total,
-        token=token,
+        token=p["token"],
         contrato=contrato
     )
 
