@@ -1,4 +1,3 @@
-LEANTTRO PORTAL — app.py
 Portal de propostas/projetos para clientes da Leanttro
 """
 
