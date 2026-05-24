@@ -1431,14 +1431,16 @@ def api_metricas_gsc(cliente_slug):
         ]
 
         return jsonify({
-            "ok":           True,
-            "cliques":      cliques,
-            "impressoes":   impressoes,
-            "ctr":          ctr,
-            "posicao":      posicao,
+            "success":      True,
+            "totais": {
+                "cliques":    cliques,
+                "impressoes": impressoes,
+                "ctr":        ctr,
+                "posicao":    posicao,
+            },
             "top_paginas":  top_paginas,
             "top_keywords": top_keywords,
-            "serie":        serie,
+            "por_dia":      serie,
             "periodo_dias": dias,
         })
 
