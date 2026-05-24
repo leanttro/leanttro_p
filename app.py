@@ -119,7 +119,7 @@ def gerar_slug(texto):
     return texto.strip('-')[:80]
 
 def gerar_slug_unico(base):
-    """Gera slug único verificando colisões no banco — clientes."""
+    """Gera slug único verificando colisões no banco  clientes."""
     slug = gerar_slug(base)
     if not slug:
         slug = 'cliente'
@@ -181,7 +181,7 @@ def listar_templates_portal():
     return slugs if slugs else ["portal_padrao"]
 
 # ═══════════════════════════════════════════════════════════
-#  GROQ — IA
+#  GROQ  IA
 # ═══════════════════════════════════════════════════════════
 
 def groq_chat(system_prompt, user_prompt, max_tokens=600):
@@ -208,7 +208,7 @@ def groq_chat(system_prompt, user_prompt, max_tokens=600):
         return None, str(e)
 
 # ═══════════════════════════════════════════════════════════
-#  ROTAS — AUTH ADMIN
+#  ROTAS  AUTH ADMIN
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -234,7 +234,7 @@ def admin_logout():
     return redirect("/admin/login")
 
 # ═══════════════════════════════════════════════════════════
-#  ROTAS — PAINEL ADMIN
+#  ROTAS  PAINEL ADMIN
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/admin")
@@ -264,7 +264,7 @@ def admin_dashboard():
     )
 
 # ═══════════════════════════════════════════════════════════
-#  API — CLIENTES
+#  API  CLIENTES
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/clientes")
@@ -356,7 +356,7 @@ def api_cliente_pin_set(cid):
     return jsonify({"ok": True, "pin": pin or None})
 
 # ═══════════════════════════════════════════════════════════
-#  API — PROPOSTAS
+#  API  PROPOSTAS
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/propostas")
@@ -526,12 +526,12 @@ def api_proposta_duplicar(pid):
     return jsonify({"ok": True, "id": novo_id, "token": token})
 
 # ═══════════════════════════════════════════════════════════
-#  API — TAREFAS (atualização de status pelo cliente/admin)
+#  API  TAREFAS (atualização de status pelo cliente/admin)
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/tarefas/<int:tid>/resposta", methods=["POST"])
 def api_tarefa_resposta(tid):
-    """Cliente entrega uma tarefa — não precisa de login admin"""
+    """Cliente entrega uma tarefa  não precisa de login admin"""
     d = request.json or {}
     token_proposta = d.get("token")
     # Verifica que a tarefa pertence a essa proposta
@@ -556,7 +556,7 @@ def api_tarefa_status(tid):
     return jsonify({"ok": True})
 
 # ═══════════════════════════════════════════════════════════
-#  API — MENSAGENS
+#  API  MENSAGENS
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/mensagens/<int:pid>", methods=["POST"])
@@ -589,7 +589,7 @@ def api_mensagens_marcar_lidas(pid):
     return jsonify({"ok": True})
 
 # ═══════════════════════════════════════════════════════════
-#  API — MÉTRICAS (entrada manual por proposta — existente)
+#  API  MÉTRICAS (entrada manual por proposta  existente)
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/metricas/<int:pid>", methods=["POST"])
@@ -640,7 +640,7 @@ def api_metrica_sync_google(pid):
     })
 
 # ═══════════════════════════════════════════════════════════
-#  API — IA (GROQ)
+#  API  IA (GROQ)
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/ia/gerar-proposta", methods=["POST"])
@@ -724,7 +724,7 @@ def api_ia_gerar_contrato():
 
     prompt = f"""Gere um contrato de {tipo_label} com as seguintes informações:
 
-CONTRATANTE: {cliente_nome}{f' — {cliente_empresa}' if cliente_empresa else ''}
+CONTRATANTE: {cliente_nome}{f'  {cliente_empresa}' if cliente_empresa else ''}
 CONTRATADA: Leanttro Tecnologia — CNPJ 63.556.406/0001-75 — São Paulo/SP
 SERVIÇOS: {servicos}
 VALOR: R$ {valor}{f' — {forma_pgto}' if forma_pgto else ''}
@@ -985,7 +985,7 @@ def api_contrato_pdf(pid):
     )
 
 # ═══════════════════════════════════════════════════════════
-#  API — TEMPLATES DO PORTAL
+#  API  TEMPLATES DO PORTAL
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/api/templates")
@@ -1054,7 +1054,7 @@ def portal_cliente(token):
     tarefas_eu      = [t for t in tarefas if t["responsavel"] == "eu"]
     tarefas_cliente = [t for t in tarefas if t["responsavel"] == "cliente"]
 
-    # Template dinâmico — se não existe usa o padrão
+    # Template dinâmico  se não existe usa o padrão
     template_slug = p.get("template") or "portal_padrao"
     template_path = f"portal/{template_slug}.html"
     pasta = os.path.join(app.root_path, "templates", "portal", f"{template_slug}.html")
@@ -1090,7 +1090,7 @@ def portal_cliente_pin(token):
     return portal_cliente(token)
 
 # ═══════════════════════════════════════════════════════════
-#  PORTAL DO CLIENTE — por slug
+#  PORTAL DO CLIENTE  por slug
 # ═══════════════════════════════════════════════════════════
 
 @app.route("/c/<slug>", methods=["GET", "POST"])
@@ -1598,7 +1598,7 @@ def api_metricas_ia_analise(cliente_slug):
     return jsonify({"analise": texto})
 
 
-# ── OAuth — Iniciar ───────────────────────────────────────────────────────
+# ── OAuth Iniciar ───────────────────────────────────────────────────────
 
 @app.route("/api/metricas/<cliente_slug>/oauth/start")
 def metricas_oauth_start(cliente_slug):
@@ -1614,7 +1614,7 @@ def metricas_oauth_start(cliente_slug):
     if not cliente.get("metricas_ativo"):
         abort(403)
 
-    # servico=gsc|ga4|all — pede todos por padrão (evita reconexão dupla)
+    # servico=gsc|ga4|all  pede todos por padrão (evita reconexão dupla)
     servico = request.args.get("servico", "all")
     scopes  = {"gsc": SCOPES_GSC, "ga4": SCOPES_GA4}.get(servico, SCOPES_ALL)
 
@@ -1632,7 +1632,7 @@ def metricas_oauth_start(cliente_slug):
     return redirect(auth_url)
 
 
-# ── OAuth — Callback ──────────────────────────────────────────────────────
+# ── OAuth Callback ──────────────────────────────────────────────────────
 
 @app.route("/api/metricas/oauth/callback")
 def metricas_oauth_callback():
@@ -1697,7 +1697,7 @@ def api_metricas_sync(cliente_slug):
     return jsonify({"ok": True, "conectado": True})
 
 
-# ── Admin — Toggle métricas ───────────────────────────────────────────────
+# ── Admin  Toggle métricas ───────────────────────────────────────────────
 
 @app.route("/api/admin/clientes/<int:cliente_id>/metricas/toggle", methods=["POST"])
 @login_required
@@ -1717,7 +1717,7 @@ def api_admin_metricas_toggle(cliente_id):
     return jsonify({"ok": True, "ativo": novo})
 
 
-# ── Admin — Salvar GA4 property + GSC site ────────────────────────────────
+# ── Admin  Salvar GA4 property + GSC site ────────────────────────────────
 
 @app.route("/api/admin/clientes/<int:cliente_id>/metricas/ga4-property", methods=["POST"])
 @login_required
@@ -1744,7 +1744,7 @@ def api_admin_metricas_config(cliente_id):
     return jsonify({"ok": True, "ga4_property_id": ga4_id, "gsc_site_url": gsc_url})
 
 
-# ── Admin — Status do módulo de métricas ─────────────────────────────────
+# ── Admin  Status do módulo de métricas ─────────────────────────────────
 
 @app.route("/api/admin/clientes/<int:cliente_id>/metricas/status")
 @login_required
