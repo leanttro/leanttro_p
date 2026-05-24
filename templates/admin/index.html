@@ -809,8 +809,8 @@ async function carregarPropostas() {
       <td class="td-muted">${fmtData(p.criado_em)}</td>
       <td><div class="td-actions">
         <button class="btn btn-ghost btn-xs" onclick="editarProposta(${p.id})">Editar</button>
-        <a href="/p/${p.token}" target="_blank" class="btn btn-secondary btn-xs">Portal →</a>
-        ${p.cliente_whatsapp ? `<a href="https://wa.me/55${p.cliente_whatsapp.replace(/\D/g,'')}?text=Ol%C3%A1+${encodeURIComponent(p.cliente_nome)}%21+Segue+o+link+da+sua+proposta%3A+${HOST}/p/${p.token}" target="_blank" class="btn btn-success btn-xs">WhatsApp</a>` : ''}
+        <a href="/p/${p.slug||p.token}" target="_blank" class="btn btn-secondary btn-xs">Portal →</a>
+        ${p.cliente_whatsapp ? `<a href="https://wa.me/55${p.cliente_whatsapp.replace(/\D/g,'')}?text=Ol%C3%A1+${encodeURIComponent(p.cliente_nome)}%21+Segue+o+link+da+sua+proposta%3A+${HOST}/p/${p.slug||p.token}" target="_blank" class="btn btn-success btn-xs">WhatsApp</a>` : ''}
       </div></td>
     </tr>`).join('');
 }
@@ -850,8 +850,9 @@ async function editarProposta(id) {
   document.getElementById('mp-pagamento').value = p.forma_pagamento||'';
   document.getElementById('mp-cor').value = p.cor_tema||'#2563eb';
   document.getElementById('mp-msg-final').value = p.mensagem_final||'';
-  // Link
-  const link = `${HOST}/p/${p.token}`;
+  // Link — usa slug amigável se existir, senão token
+  const linkPath = p.slug || p.token;
+  const link = `${HOST}/p/${linkPath}`;
   document.getElementById('mp-link-code').textContent = link;
   document.getElementById('mp-link-abrir').href = link;
   document.getElementById('mp-link-area').style.display = 'block';
@@ -919,8 +920,10 @@ async function salvarProposta() {
 }
 
 async function deletarProposta() {
-  if(!confirm('Excluir esta proposta?')) return;
-  await fetch(`/api/propostas/${_pid}`, {method:'DELETE'});
+  const titulo = document.getElementById('mp-titulo').value || 'esta proposta';
+  if(!confirm(`Excluir "${titulo}"?\n\nEssa ação não pode ser desfeita.`)) return;
+  const res = await fetch(`/api/propostas/${_pid}`, {method:'DELETE'});
+  if(!res.ok) return toast('Erro ao excluir', false);
   fechar('modal-proposta');
   toast('Proposta excluída');
   carregarPropostas();
