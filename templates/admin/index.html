@@ -655,6 +655,20 @@ tr:hover td{background:#fafaf8}
         </div>
       </div>
     </div>
+    <div class="form-grid c2">
+      <div class="field">
+        <label>PIN de acesso (4 dígitos)</label>
+        <input id="mc-pin" type="tel" maxlength="4" inputmode="numeric" placeholder="ex: 1234"
+               style="letter-spacing:6px;font-size:1rem;font-weight:700"
+               oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
+        <div class="field-hint">Deixe em branco para acesso sem PIN.</div>
+      </div>
+      <div class="field" id="mc-pin-status-wrap" style="display:none">
+        <label>PIN atual</label>
+        <div id="mc-pin-status" style="padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:.8rem;color:var(--text2);display:flex;align-items:center;gap:6px">—</div>
+        <div class="field-hint"><a href="#" onclick="removerPin(event)" style="color:var(--red);font-size:.68rem;font-weight:600;text-decoration:none">Remover PIN</a></div>
+      </div>
+    </div>
   </div>
   <div class="modal-foot">
     <div class="left">
@@ -773,9 +787,10 @@ async function carregarOpcoesClientes() {
 function novoCliente() {
   document.getElementById('mc-titulo').textContent = 'Novo Cliente';
   document.getElementById('mc-id').value = '';
-  ['mc-nome','mc-empresa','mc-email','mc-whatsapp','mc-slug','mc-logo'].forEach(id => document.getElementById(id).value='');
+  ['mc-nome','mc-empresa','mc-email','mc-whatsapp','mc-slug','mc-logo','mc-pin'].forEach(id => document.getElementById(id).value='');
   document.getElementById('mc-btn-del').style.display = 'none';
   document.getElementById('mc-link-wrap').style.display = 'none';
+  document.getElementById('mc-pin-status-wrap').style.display = 'none';
   abrir('modal-cliente');
 }
 
@@ -789,6 +804,18 @@ async function editarCliente(id) {
   document.getElementById('mc-whatsapp').value = c.whatsapp||'';
   document.getElementById('mc-slug').value = c.slug||'';
   document.getElementById('mc-logo').value = c.logo_url||'';
+  document.getElementById('mc-pin').value = '';
+  // Carrega PIN atual
+  fetch(`/api/clientes/${id}/pin`).then(r=>r.json()).then(d=>{
+    const pinWrap = document.getElementById('mc-pin-status-wrap');
+    const pinStatus = document.getElementById('mc-pin-status');
+    if(d.pin) {
+      pinStatus.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:#16a34a;fill:none;stroke-width:2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> PIN definido: <strong style="letter-spacing:3px">${'•'.repeat(d.pin.length)}</strong>`;
+      pinWrap.style.display = '';
+    } else {
+      pinWrap.style.display = 'none';
+    }
+  }).catch(()=>{});
   if(c.slug) {
     document.getElementById('mc-link').value = `${HOST}/c/${c.slug}`;
     document.getElementById('mc-link-wrap').style.display = '';
@@ -817,6 +844,13 @@ async function salvarCliente() {
   const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const data = await res.json();
   if(!res.ok) return toast(data.erro||'Erro ao salvar', false);
+  // Salva PIN se preenchido
+  const pinVal = document.getElementById('mc-pin').value.trim();
+  const cid = id || data.id;
+  if(cid && pinVal) {
+    const pr = await fetch(`/api/clientes/${cid}/pin`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pin:pinVal})});
+    if(!pr.ok) return toast('Cliente salvo, mas erro ao definir PIN', false);
+  }
   fechar('modal-cliente');
   toast(id ? 'Cliente atualizado' : 'Cliente criado');
   carregarClientes();
@@ -825,6 +859,17 @@ async function salvarCliente() {
 
 function copiarLinkCliente() {
   navigator.clipboard.writeText(document.getElementById('mc-link').value).then(() => toast('Link copiado!'));
+}
+
+async function removerPin(e) {
+  e.preventDefault();
+  const id = document.getElementById('mc-id').value;
+  if(!id || !confirm('Remover o PIN deste cliente? Acesso ficará sem proteção.')) return;
+  const r = await fetch(`/api/clientes/${id}/pin`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pin:''})});
+  if(!r.ok) return toast('Erro ao remover PIN', false);
+  document.getElementById('mc-pin-status-wrap').style.display = 'none';
+  document.getElementById('mc-pin').value = '';
+  toast('PIN removido');
 }
 
 async function deletarCliente() {
