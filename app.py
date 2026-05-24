@@ -59,7 +59,7 @@ GROQ_API_URL      = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL        = "llama-3.3-70b-versatile"
 GOOGLE_CLIENT_ID  = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SEC = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT   = os.getenv("GOOGLE_REDIRECT_URI", "https://portal.leanttro.com/oauth/callback")
+GOOGLE_REDIRECT   = os.getenv("GOOGLE_REDIRECT_URI", "https://portal.leanttro.com/api/metricas/oauth/callback")
 BASE_URL          = os.getenv("BASE_URL", "http://localhost:5002")
 
 # Escopos OAuth do módulo de métricas
@@ -1268,8 +1268,12 @@ def metricas_cliente(cliente_slug):
 
     if not cliente.get("metricas_ativo"):
         return render_template(
-            "portal/metricas_bloqueado.html",
-            cliente=dict(cliente)
+            "portal/metricas_cliente.html",
+            cliente=dict(cliente),
+            metricas_ativo=False,
+            ga4_property_id="",
+            gsc_site_url="",
+            conectado=False,
         )
 
     creds     = _get_creds(cliente["id"])
@@ -1278,6 +1282,7 @@ def metricas_cliente(cliente_slug):
     return render_template(
         "portal/metricas_cliente.html",
         cliente=dict(cliente),
+        metricas_ativo=True,
         ga4_property_id=cliente.get("ga4_property_id") or "",
         gsc_site_url=cliente.get("gsc_site_url") or "",
         conectado=conectado,
@@ -1356,7 +1361,7 @@ def api_metricas_gsc(cliente_slug):
         r_kw = _query_gsc(["query"], row_limit=10)
         top_keywords = [
             {
-                "keyword":    r["keys"][0],
+                "query":      r["keys"][0],
                 "cliques":    round(r.get("clicks",      0)),
                 "impressoes": round(r.get("impressions", 0)),
                 "ctr":        round(r.get("ctr",         0) * 100, 2),
