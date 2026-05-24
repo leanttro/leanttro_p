@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ proposta.titulo }} — Leanttro Portal</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:{{ proposta.cor_tema or '#1a1916' }};
+  --primary-rgb:26,25,22;
+  --bg:#f7f7f5;
+  --surface:#ffffff;
+  --surface2:#f0efe9;
+  --border:#e5e3db;
+  --border-light:#eeede7;
+  --text:#1a1916;
+  --text2:#5a5750;
+  --text3:#9c9890;
+  --green:#16a34a;
+  --green-light:#f0fdf4;
+  --amber:#d97706;
+  --amber-light:#fffbeb;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --radius:12px;
+  --radius-sm:8px;
+  --radius-xs:6px;
+  --sans:'Montserrat',sans-serif;
+  --shadow:0 1px 4px rgba(0,0,0,.06),0 2px 12px rgba(0,0,0,.04);
+  --shadow-md:0 4px 24px rgba(0,0,0,.09);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;font-size:14px}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block;border-radius:var(--radius)}
+.container{max-width:900px;margin:0 auto;padding:0 20px}
+
+/* ── HEADER ── */
+header{
+  background:rgba(247,247,245,.88);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:200;
+}
+.header-inner{
+  max-width:900px;margin:0 auto;padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;gap:12px;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.88rem;color:var(--text);letter-spacing:-.2px}
+.logo-mark{
+  width:30px;height:30px;background:var(--text);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.logo-mark svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5}
+.logo-sub{font-size:.65rem;color:var(--text3);font-weight:500;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px}
+.status-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 11px;border-radius:20px;font-size:.65rem;font-weight:700;
+  letter-spacing:.3px;text-transform:uppercase;
+}
+.status-pill::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.s-rascunho{background:var(--surface2);color:var(--text3)}.s-rascunho::before{background:var(--text3)}
+.s-proposta{background:#eff6ff;color:#2563eb}.s-proposta::before{background:#2563eb}
+.s-vista{background:var(--amber-light);color:var(--amber)}.s-vista::before{background:var(--amber)}
+.s-em_andamento{background:var(--green-light);color:var(--green)}.s-em_andamento::before{background:var(--green)}
+.s-concluido{background:#f0fdf4;color:#15803d}.s-concluido::before{background:#15803d}
+.s-recusado{background:var(--red-light);color:var(--red)}.s-recusado::before{background:var(--red)}
+.btn-wpp{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;
+  font-size:.75rem;font-weight:600;font-family:var(--sans);
+  border:none;cursor:pointer;transition:.2s;white-space:nowrap;
+}
+.btn-wpp:hover{background:#1da850;transform:scale(1.02)}
+.btn-wpp svg{width:14px;height:14px;flex-shrink:0}
+.btn-wpp-text{display:inline}
+@media(max-width:600px){
+  .btn-wpp-text{display:none}
+  .btn-wpp{padding:7px;border-radius:50%;width:34px;height:34px;justify-content:center}
+  .btn-wpp svg{width:17px;height:17px}
+}
+
+/* ── NAV ÂNCORAS ── */
+.subnav{
+  background:rgba(247,247,245,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:60px;z-index:190;
+  overflow-x:auto;scrollbar-width:none;
+}
+.subnav::-webkit-scrollbar{display:none}
+.subnav-inner{
+  max-width:900px;margin:0 auto;padding:0 20px;
+  display:flex;align-items:center;gap:2px;height:42px;
+}
+.subnav-item{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:6px;font-size:.75rem;font-weight:600;color:var(--text3);
+  cursor:pointer;transition:.15s;white-space:nowrap;flex-shrink:0;
+  text-decoration:none;border:none;background:none;font-family:var(--sans);
+}
+.subnav-item:hover{background:var(--surface2);color:var(--text)}
+.subnav-item.active{color:var(--primary);background:rgba(var(--primary-rgb),.07)}
+.subnav-item svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;opacity:.8}
+.subnav-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--red);flex-shrink:0;
+}
+
+/* ── HERO ── */
+.hero{
+  background:var(--primary);
+  padding:48px 20px 40px;
+  position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;
+  width:500px;height:500px;border-radius:50%;
+  background:rgba(255,255,255,.04);
+  bottom:-200px;right:-150px;
+  pointer-events:none;
+}
+.hero .container{position:relative;z-index:1}
+.hero-eyebrow{
+  font-size:.67rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);
+  margin-bottom:10px;display:block;
+}
+.hero h1{
+  font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;
+  color:#fff;letter-spacing:-.04em;line-height:1.1;
+  margin-bottom:10px;
+}
+.hero-desc{
+  font-size:.9rem;color:rgba(255,255,255,.75);
+  max-width:560px;margin-bottom:28px;line-height:1.65;
+}
+.hero-cards{
+  display:flex;gap:12px;flex-wrap:wrap;
+}
+.hero-card{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--radius);padding:14px 18px;flex:1;min-width:130px;
+  backdrop-filter:blur(10px);
+}
+.hero-card-label{
+  font-size:.62rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px;
+}
+.hero-card-value{
+  font-size:1.15rem;font-weight:700;color:#fff;letter-spacing:-.03em;line-height:1;
+}
+.hero-card-value.big{font-size:1.5rem}
+.hero-card-sub{font-size:.68rem;color:rgba(255,255,255,.6);margin-top:4px}
+
+/* ── SEÇÕES ── */
+.section{padding:32px 0}
+.section+.section{border-top:1px solid var(--border)}
+.section-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;gap:12px;
+}
+.section-title{
+  font-size:.82rem;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text3);
+}
+.section-badge{
+  font-size:.65rem;font-weight:700;background:var(--surface2);
+  color:var(--text3);padding:2px 8px;border-radius:10px;
+}
+
+/* ── SERVIÇOS ── */
+.servico-list{display:flex;flex-direction:column;gap:10px}
+.servico-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+  display:flex;align-items:center;gap:14px;
+  transition:.15s;
+}
+.servico-card:hover{box-shadow:var(--shadow)}
+.servico-icon{
+  width:38px;height:38px;border-radius:9px;
+  background:var(--surface2);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.servico-icon svg{width:16px;height:16px;stroke:var(--text2);fill:none;stroke-width:2}
+.servico-info{flex:1;min-width:0}
+.servico-nome{font-size:.85rem;font-weight:700;color:var(--text);margin-bottom:2px}
+.servico-desc{font-size:.75rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.servico-valor{text-align:right;flex-shrink:0}
+.servico-preco{font-size:.92rem;font-weight:700;color:var(--text)}
+.servico-periodo{font-size:.65rem;color:var(--text3);margin-top:1px}
+.servico-cat{
+  font-size:.6rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+  padding:2px 7px;border-radius:10px;background:var(--surface2);color:var(--text3);
+  margin-top:4px;display:inline-block;
+}
+.total-row{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;
+}
+.total-label{font-size:.75rem;font-weight:600;color:var(--text2)}
+.total-valor{font-size:1.1rem;font-weight:800;color:var(--text);letter-spacing:-.03em}
+.pagamento-info{font-size:.72rem;color:var(--text3);margin-top:2px}
+
+/* ── TAREFAS ── */
+.tarefas-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.tarefas-grid{grid-template-columns:1fr}}
+.tarefas-col{display:flex;flex-direction:column;gap:8px}
+.tarefas-col-head{
+  display:flex;align-items:center;gap:7px;margin-bottom:4px;
+}
+.tarefas-col-head .col-title{
+  font-size:.72rem;font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--text2);
+}
+.col-badge{
+  font-size:.6rem;font-weight:700;padding:1px 7px;border-radius:10px;
+}
+.col-eu .col-badge{background:#eff6ff;color:#2563eb}
+.col-cliente .col-badge{background:var(--green-light);color:var(--green)}
+.tarefa-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  transition:.15s;
+}
+.tarefa-item:hover{box-shadow:var(--shadow)}
+.tarefa-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
+.tarefa-check{
+  width:18px;height:18px;border-radius:5px;border:2px solid var(--border);
+  flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;
+  transition:.2s;
+}
+.tarefa-check.done{background:var(--green);border-color:var(--green)}
+.tarefa-check.done svg{display:block}
+.tarefa-check svg{display:none;width:10px;height:10px;stroke:#fff;fill:none;stroke-width:3}
+.tarefa-check.waiting{background:var(--amber);border-color:var(--amber)}
+.tarefa-check.waiting svg{display:block}
+.tarefa-titulo{font-size:.8rem;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+.tarefa-titulo.done{color:var(--text3);text-decoration:line-through}
+.tarefa-instrucao{font-size:.73rem;color:var(--text3);line-height:1.5;margin-bottom:8px}
+.tarefa-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tarefa-badge{
+  font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:10px;
+  letter-spacing:.2px;text-transform:uppercase;
+}
+.tb-pendente{background:var(--surface2);color:var(--text3)}
+.tb-entregue{background:var(--amber-light);color:var(--amber)}
+.tb-aprovado{background:var(--green-light);color:var(--green)}
+/* Botão de entrega do cliente */
+.btn-entregar{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:var(--radius-xs);
+  background:var(--primary);color:#fff;
+  font-size:.7rem;font-weight:700;font-family:var(--sans);
+  border:none;cursor:pointer;transition:.15s;
+}
+.btn-entregar:hover{opacity:.85}
+.btn-entregar svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
+/* Form de entrega inline */
+.entrega-form{margin-top:10px;display:none}
+.entrega-form.open{display:block}
+.entrega-input{
+  width:100%;padding:7px 10px;border:1px solid var(--border);
+  border-radius:var(--radius-xs);font-size:.78rem;font-family:var(--sans);
+  background:var(--bg);color:var(--text);outline:none;transition:.15s;
+  resize:none;
+}
+.entrega-input:focus{border-color:var(--primary);background:#fff}
+.entrega-actions{display:flex;gap:6px;margin-top:6px;justify-content:flex-end}
+.btn-cancelar{
+  padding:5px 11px;border-radius:var(--radius-xs);
+  background:var(--surface2);color:var(--text2);
+  font-size:.7rem;font-weight:600;font-family:var(--sans);
+  border:1px solid var(--border);cursor:pointer;
+}
+.btn-confirmar{
+  padding:5px 11px;border-radius:var(--radius-xs);
+  background:var(--green);color:#fff;
+  font-size:.7rem;font-weight:700;font-family:var(--sans);
+  border:none;cursor:pointer;transition:.15s;
+}
+.btn-confirmar:hover{opacity:.88}
+.resposta-box{
+  margin-top:8px;padding:8px 10px;background:var(--surface2);
+  border-radius:var(--radius-xs);font-size:.73rem;color:var(--text2);
+  border-left:3px solid var(--green);
+}
+
+/* ── MÉTRICAS ── */
+.metricas-wrap{display:flex;flex-direction:column;gap:16px}
+.chart-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;overflow:hidden;
+}
+.chart-title{font-size:.72rem;font-weight:700;color:var(--text2);margin-bottom:16px;
+  display:flex;align-items:center;gap:6px}
+.chart-title span{
+  width:10px;height:10px;border-radius:3px;display:inline-block;
+}
+.metricas-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:500px){.metricas-stats{grid-template-columns:1fr 1fr}}
+.m-stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 16px;
+}
+.m-stat-label{font-size:.62rem;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.m-stat-value{font-size:1.3rem;font-weight:700;color:var(--text);
+  letter-spacing:-.04em;line-height:1}
+.m-stat-sub{font-size:.68rem;color:var(--text3);margin-top:3px}
+.obs-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  font-size:.78rem;color:var(--text2);line-height:1.6;
+  border-left:3px solid var(--primary);
+}
+
+/* Gráfico SVG */
+.bar-chart{width:100%;overflow:visible}
+.bar-chart-group{display:flex;align-items:flex-end;gap:8px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar-label{font-size:.6rem;color:var(--text3);white-space:nowrap;font-weight:500}
+.bar-bars{display:flex;gap:2px;align-items:flex-end;width:100%;justify-content:center}
+.bar{border-radius:4px 4px 0 0;min-height:4px;transition:.4s ease;width:100%}
+.bar-val{font-size:.6rem;color:var(--text3);font-weight:600}
+
+/* ── MÍDIAS ── */
+.midias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.midia-item{border-radius:var(--radius);overflow:hidden;background:var(--surface);border:1px solid var(--border)}
+.midia-item img{width:100%;height:140px;object-fit:cover;border-radius:0}
+.midia-legenda{padding:10px 12px;font-size:.73rem;color:var(--text2);font-weight:500}
+
+/* ── LINKS ── */
+.links-list{display:flex;flex-direction:column;gap:8px}
+.link-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  transition:.15s;
+}
+.link-item:hover{box-shadow:var(--shadow);border-color:var(--border-light)}
+.link-icon{
+  width:32px;height:32px;background:var(--surface2);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.link-icon svg{width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2}
+.link-info{flex:1;min-width:0}
+.link-titulo{font-size:.8rem;font-weight:600;color:var(--text)}
+.link-tipo{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+.link-arrow svg{width:14px;height:14px;stroke:var(--text3);fill:none;stroke-width:2;flex-shrink:0}
+
+/* ── MENSAGENS ── */
+.msg-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.msg-list{
+  padding:16px;display:flex;flex-direction:column;gap:10px;
+  max-height:340px;overflow-y:auto;
+}
+.msg-item{
+  max-width:75%;display:flex;flex-direction:column;gap:2px;
+}
+.msg-item.admin{align-self:flex-start}
+.msg-item.cliente{align-self:flex-end}
+.msg-bubble{
+  padding:9px 13px;border-radius:12px;font-size:.8rem;line-height:1.55;
+}
+.msg-item.admin .msg-bubble{
+  background:var(--surface2);color:var(--text);
+  border-bottom-left-radius:3px;
+}
+.msg-item.cliente .msg-bubble{
+  background:var(--primary);color:#fff;
+  border-bottom-right-radius:3px;
+}
+.msg-meta{font-size:.62rem;color:var(--text3);padding:0 4px}
+.msg-item.cliente .msg-meta{text-align:right}
+.msg-vazia{
+  text-align:center;padding:32px;font-size:.78rem;color:var(--text3);
+}
+.msg-footer{
+  border-top:1px solid var(--border);padding:12px;
+  display:flex;gap:8px;align-items:flex-end;
+}
+.msg-input{
+  flex:1;padding:9px 12px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);font-size:.82rem;font-family:var(--sans);
+  background:var(--bg);color:var(--text);outline:none;resize:none;
+  min-height:42px;max-height:100px;transition:.15s;line-height:1.5;
+}
+.msg-input:focus{border-color:var(--primary);background:#fff}
+.btn-send{
+  width:38px;height:38px;background:var(--primary);color:#fff;
+  border:none;border-radius:var(--radius-sm);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:.15s;
+}
+.btn-send:hover{opacity:.85}
+.btn-send svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5}
+
+/* ── MENSAGEM FINAL ── */
+.mensagem-final{
+  background:var(--primary);color:#fff;
+  border-radius:var(--radius);padding:28px 24px;
+  text-align:center;
+}
+.mensagem-final-text{
+  font-size:.9rem;line-height:1.7;opacity:.9;margin-bottom:16px;
+}
+.mensagem-final h3{
+  font-size:1.1rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;
+}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);padding:28px 20px;
+  text-align:center;
+}
+.footer-inner{
+  max-width:900px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;
+}
+.footer-brand{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--text3)}
+.footer-brand-mark{
+  width:22px;height:22px;background:var(--text);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+}
+.footer-brand-mark svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2.5}
+.footer-links{display:flex;gap:16px;font-size:.72rem}
+.footer-links a{color:var(--text3);transition:.15s}
+.footer-links a:hover{color:var(--text)}
+
+/* ── VAZIO ── */
+.empty-state{
+  text-align:center;padding:32px 20px;
+  color:var(--text3);font-size:.78rem;
+}
+.empty-state svg{
+  width:32px;height:32px;stroke:var(--border);fill:none;stroke-width:1.5;
+  margin:0 auto 10px;display:block;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--text);color:#fff;padding:10px 18px;
+  border-radius:8px;font-size:.78rem;font-weight:600;
+  box-shadow:var(--shadow-md);
+  transform:translateY(12px);opacity:0;
+  transition:.25s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .hero{padding:32px 20px 28px}
+  .hero-cards{flex-direction:row}
+  .hero-card{min-width:0}
+  .metricas-stats{grid-template-columns:1fr 1fr}
+  .footer-inner{justify-content:center;flex-direction:column;text-align:center;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <div>Leanttro<strong>Portal</strong></div>
+        <div class="logo-sub">{{ cliente.empresa or cliente.nome }}</div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      {% set st = proposta.status or 'rascunho' %}
+      {% set st_label = {'rascunho':'Rascunho','proposta':'Enviado','vista':'Visualizado','em_andamento':'Em andamento','concluido':'Concluído','recusado':'Recusado'} %}
+      <span class="status-pill s-{{ st }}">{{ st_label.get(st, st) }}</span>
+
+      {% if cliente.whatsapp %}
+      <a href="https://wa.me/{{ cliente.whatsapp | replace('+','') | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" class="btn-wpp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.533 5.86L.073 23.633a.5.5 0 00.614.614l5.774-1.46A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.98 0-3.83-.545-5.41-1.49l-.388-.232-4.016 1.017 1.018-3.93-.254-.4A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        <span class="btn-wpp-text">Falar no WhatsApp</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<!-- ── SUBNAV ── -->
+<nav class="subnav" aria-label="Seções do portal">
+  <div class="subnav-inner">
+    <a href="#servicos" class="subnav-item">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Contratado
+    </a>
+    <a href="#andamento" class="subnav-item">
+      <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Andamento
+    </a>
+    {% if metricas %}
+    <a href="#metricas" class="subnav-item">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Métricas
+    </a>
+    {% endif %}
+    {% if midias or links %}
+    <a href="#materiais" class="subnav-item">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Materiais
+    </a>
+    {% endif %}
+    <a href="#mensagens" class="subnav-item">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Mensagens
+    </a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="container">
+    <span class="hero-eyebrow">{{ proposta.status | replace('_',' ') | upper }}</span>
+    <h1>{{ proposta.titulo }}</h1>
+    {% if proposta.descricao %}
+    <p class="hero-desc">{{ proposta.descricao }}</p>
+    {% endif %}
+    <div class="hero-cards">
+      <div class="hero-card">
+        <div class="hero-card-label">Valor total</div>
+        <div class="hero-card-value big">R$ {{ '%.0f'|format(total) }}</div>
+        {% if proposta.forma_pagamento %}
+        <div class="hero-card-sub">{{ proposta.forma_pagamento }}</div>
+        {% endif %}
+      </div>
+      {% if proposta.prazo_entrega %}
+      <div class="hero-card">
+        <div class="hero-card-label">Prazo</div>
+        <div class="hero-card-value">{{ proposta.prazo_entrega }}</div>
+        <div class="hero-card-sub">Previsão de entrega</div>
+      </div>
+      {% endif %}
+      {% if proposta.validade %}
+      <div class="hero-card">
+        <div class="hero-card-label">Validade</div>
+        <div class="hero-card-value">
+          {% if proposta.validade is string %}
+            {{ proposta.validade[:10] }}
+          {% else %}
+            {{ proposta.validade.strftime('%d/%m/%Y') }}
+          {% endif %}
+        </div>
+        <div class="hero-card-sub">Validade da proposta</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ── SERVIÇOS ── -->
+<section id="servicos">
+  <div class="container">
+    <div class="section" style="padding-top:32px">
+      <div class="section-head">
+        <span class="section-title">O que está contratado</span>
+        <span class="section-badge">{{ servicos|length }} serviço{{ 's' if servicos|length != 1 }}</span>
+      </div>
+
+      {% if servicos %}
+      <div class="servico-list">
+        {% for s in servicos %}
+        <div class="servico-card">
+          <div class="servico-icon">
+            {% if s.categoria == 'site' %}
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            {% elif s.categoria == 'seo' %}
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            {% elif s.categoria == 'automacao' %}
+            <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+            {% elif s.categoria == 'hub' %}
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="4" r="1"/><circle cx="20" cy="12" r="1"/><circle cx="12" cy="20" r="1"/><circle cx="4" cy="12" r="1"/></svg>
+            {% elif s.categoria == '3d' %}
+            <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            {% else %}
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            {% endif %}
+          </div>
+          <div class="servico-info">
+            <div class="servico-nome">{{ s.nome }}</div>
+            {% if s.descricao %}<div class="servico-desc">{{ s.descricao }}</div>{% endif %}
+            {% if s.categoria %}
+            <span class="servico-cat">{{ {'site':'Site','hub':'Hub','automacao':'Automação','seo':'SEO','3d':'3D','outro':'Outro'}.get(s.categoria, s.categoria) }}</span>
+            {% endif %}
+          </div>
+          <div class="servico-valor">
+            <div class="servico-preco">
+              R$ {{ '%.0f'|format(s.valor_unit * s.quantidade) }}
+            </div>
+            <div class="servico-periodo">
+              {% if s.recorrente %}/ {{ s.periodo or 'mês' }}{% else %}pagamento único{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="total-row">
+          <div>
+            <div class="total-label">Total do projeto</div>
+            {% if proposta.forma_pagamento %}
+            <div class="pagamento-info">{{ proposta.forma_pagamento }}</div>
+            {% endif %}
+          </div>
+          <div class="total-valor">R$ {{ '%.0f'|format(total) }}</div>
+        </div>
+      </div>
+
+      {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Nenhum serviço cadastrado ainda.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ── ANDAMENTO ── -->
+<section id="andamento">
+  <div class="container">
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Andamento do projeto</span>
+      </div>
+
+      <div class="tarefas-grid">
+        <!-- Coluna: Leanttro -->
+        <div class="tarefas-col col-eu">
+          <div class="tarefas-col-head">
+            <span class="col-title">🔧 Nossa parte</span>
+            {% set done_eu = tarefas_eu | selectattr('status','equalto','aprovado') | list | length %}
+            <span class="col-badge">{{ done_eu }}/{{ tarefas_eu|length }}</span>
+          </div>
+
+          {% for t in tarefas_eu %}
+          <div class="tarefa-item">
+            <div class="tarefa-top">
+              <div class="tarefa-check {{ 'done' if t.status == 'aprovado' else ('waiting' if t.status == 'entregue' else '') }}">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="tarefa-titulo {{ 'done' if t.status == 'aprovado' }}">{{ t.titulo }}</div>
+            </div>
+            {% if t.instrucao %}
+            <div class="tarefa-instrucao">{{ t.instrucao }}</div>
+            {% endif %}
+            <div class="tarefa-status-row">
+              <span class="tarefa-badge tb-{{ t.status or 'pendente' }}">
+                {{ {'pendente':'Pendente','entregue':'Em revisão','aprovado':'Concluído'}.get(t.status, t.status) }}
+              </span>
+            </div>
+          </div>
+          {% else %}
+          <div class="empty-state" style="padding:20px">
+            <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Nenhuma tarefa ainda.
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Coluna: Cliente -->
+        <div class="tarefas-col col-cliente">
+          <div class="tarefas-col-head">
+            <span class="col-title">📋 Sua parte</span>
+            {% set done_cli = tarefas_cliente | selectattr('status','in',['entregue','aprovado']) | list | length %}
+            <span class="col-badge">{{ done_cli }}/{{ tarefas_cliente|length }}</span>
+          </div>
+
+          {% for t in tarefas_cliente %}
+          <div class="tarefa-item" id="tarefa-{{ t.id }}">
+            <div class="tarefa-top">
+              <div class="tarefa-check {{ 'done' if t.status in ['aprovado','entregue'] }}">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="tarefa-titulo {{ 'done' if t.status == 'aprovado' }}">{{ t.titulo }}</div>
+            </div>
+            {% if t.instrucao %}
+            <div class="tarefa-instrucao">{{ t.instrucao }}</div>
+            {% endif %}
+
+            {% if t.resposta %}
+            <div class="resposta-box">✓ {{ t.resposta }}</div>
+            {% endif %}
+
+            <div class="tarefa-status-row">
+              <span class="tarefa-badge tb-{{ t.status or 'pendente' }}">
+                {{ {'pendente':'Pendente','entregue':'Aguardando revisão','aprovado':'Aprovado'}.get(t.status, t.status) }}
+              </span>
+              {% if t.status == 'pendente' %}
+              <button class="btn-entregar" onclick="abrirEntrega({{ t.id }}, '{{ t.tipo_entrega or 'texto' }}')">
+                <svg viewBox="0 0 24 24"><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Entregar
+              </button>
+              {% endif %}
+            </div>
+
+            <!-- Form inline de entrega -->
+            {% if t.status == 'pendente' %}
+            <div class="entrega-form" id="form-{{ t.id }}">
+              {% if t.tipo_entrega == 'confirmacao' %}
+              <p style="font-size:.75rem;color:var(--text2);margin-bottom:8px">Confirme clicando abaixo para marcar como entregue.</p>
+              {% else %}
+              <textarea
+                class="entrega-input"
+                id="input-{{ t.id }}"
+                rows="2"
+                placeholder="{{ 'Cole o link aqui...' if t.tipo_entrega == 'link' else 'Digite ou cole aqui...' }}"
+              ></textarea>
+              {% endif %}
+              <div class="entrega-actions">
+                <button class="btn-cancelar" onclick="fecharEntrega({{ t.id }})">Cancelar</button>
+                <button class="btn-confirmar" onclick="confirmarEntrega({{ t.id }}, '{{ t.tipo_entrega or 'texto' }}')">
+                  ✓ Confirmar entrega
+                </button>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="empty-state" style="padding:20px">
+            <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Nenhuma tarefa para você ainda.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MÉTRICAS ── -->
+{% if metricas %}
+<section id="metricas">
+  <div class="container">
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Métricas de performance</span>
+        <span class="section-badge">{{ metricas|length }} {{ 'mês' if metricas|length == 1 else 'meses' }}</span>
+      </div>
+
+      <!-- Última entrada de dados -->
+      {% set m = metricas[0] %}
+      <div class="metricas-stats" style="margin-bottom:16px">
+        {% if m.impressoes %}
+        <div class="m-stat">
+          <div class="m-stat-label">Impressões</div>
+          <div class="m-stat-value">{{ '{:,}'.format(m.impressoes).replace(',','.') }}</div>
+          <div class="m-stat-sub">{{ m.mes_ano }}</div>
+        </div>
+        {% endif %}
+        {% if m.cliques %}
+        <div class="m-stat">
+          <div class="m-stat-label">Cliques</div>
+          <div class="m-stat-value">{{ '{:,}'.format(m.cliques).replace(',','.') }}</div>
+          <div class="m-stat-sub">Google Search</div>
+        </div>
+        {% endif %}
+        {% if m.usuarios %}
+        <div class="m-stat">
+          <div class="m-stat-label">Usuários</div>
+          <div class="m-stat-value">{{ '{:,}'.format(m.usuarios).replace(',','.') }}</div>
+          <div class="m-stat-sub">GA4</div>
+        </div>
+        {% endif %}
+        {% if m.sessoes %}
+        <div class="m-stat">
+          <div class="m-stat-label">Sessões</div>
+          <div class="m-stat-value">{{ '{:,}'.format(m.sessoes).replace(',','.') }}</div>
+          <div class="m-stat-sub">GA4</div>
+        </div>
+        {% endif %}
+        {% if m.posicao_media %}
+        <div class="m-stat">
+          <div class="m-stat-label">Posição média</div>
+          <div class="m-stat-value">{{ '%.1f'|format(m.posicao_media) }}°</div>
+          <div class="m-stat-sub">Search Console</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Gráfico de barras -->
+      {% if metricas|length > 1 %}
+      <div class="chart-wrap">
+        <div class="chart-title">
+          <span style="background:#2563eb"></span>
+          Impressões ao longo do tempo
+        </div>
+        <canvas id="chart-impressoes" height="120"></canvas>
+      </div>
+      {% endif %}
+
+      {% if m.observacao %}
+      <div class="obs-box" style="margin-top:12px">
+        <strong style="display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;opacity:.6">Análise do mês</strong>
+        {{ m.observacao }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── MATERIAIS ── -->
+{% if midias or links %}
+<section id="materiais">
+  <div class="container">
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Materiais & referências</span>
+      </div>
+
+      {% if midias %}
+      <div class="midias-grid" style="margin-bottom:{% if links %}20px{% else %}0{% endif %}">
+        {% for m in midias %}
+        <div class="midia-item">
+          <img src="{{ m.url }}" alt="{{ m.legenda or 'Imagem' }}" loading="lazy">
+          {% if m.legenda %}<div class="midia-legenda">{{ m.legenda }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if links %}
+      <div class="links-list">
+        {% for l in links %}
+        <a href="{{ l.url }}" target="_blank" rel="noopener" class="link-item">
+          <div class="link-icon">
+            {% if l.tipo == 'portfolio' %}
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            {% elif l.tipo == 'documento' %}
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            {% else %}
+            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+            {% endif %}
+          </div>
+          <div class="link-info">
+            <div class="link-titulo">{{ l.titulo }}</div>
+            <div class="link-tipo">{{ {'portfolio':'Portfólio','referencia':'Referência','documento':'Documento','outro':'Link'}.get(l.tipo, l.tipo) }}</div>
+          </div>
+          <div class="link-arrow">
+            <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── MENSAGENS ── -->
+<section id="mensagens">
+  <div class="container">
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Mensagens</span>
+      </div>
+
+      <div class="msg-box">
+        <div class="msg-list" id="msg-list">
+          {% if mensagens %}
+            {% for msg in mensagens %}
+            <div class="msg-item {{ msg.remetente }}">
+              <div class="msg-bubble">{{ msg.texto }}</div>
+              <div class="msg-meta">
+                {{ 'Leanttro' if msg.remetente == 'admin' else 'Você' }}
+                · {{ msg.criado_em.strftime('%d/%m %H:%M') if msg.criado_em and msg.criado_em is not string else (msg.criado_em[:16].replace('T',' ') if msg.criado_em else '') }}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="msg-vazia">
+            <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--border);fill:none;stroke-width:1.5;margin:0 auto 8px;display:block"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Nenhuma mensagem ainda. Diga olá! 👋
+          </div>
+          {% endif %}
+        </div>
+        <div class="msg-footer">
+          <textarea
+            class="msg-input"
+            id="msg-input"
+            placeholder="Digite sua mensagem..."
+            rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMsg()}"
+          ></textarea>
+          <button class="btn-send" onclick="enviarMsg()" title="Enviar">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MENSAGEM FINAL ── -->
+{% if proposta.mensagem_final %}
+<div class="container" style="padding-bottom:32px">
+  <div class="mensagem-final">
+    <h3>Alguma dúvida?</h3>
+    <div class="mensagem-final-text">{{ proposta.mensagem_final }}</div>
+    {% if cliente.whatsapp %}
+    <a href="https://wa.me/{{ cliente.whatsapp | replace('+','') | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" class="btn-wpp" style="margin:0 auto;display:inline-flex">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.533 5.86L.073 23.633a.5.5 0 00.614.614l5.774-1.46A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.98 0-3.83-.545-5.41-1.49l-.388-.232-4.016 1.017 1.018-3.93-.254-.4A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      Falar no WhatsApp
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-brand-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      Leanttro Portal &nbsp;·&nbsp; Portal privado de {{ cliente.nome }}
+    </div>
+    <div class="footer-links">
+      <a href="https://leanttro.com" target="_blank">leanttro.com</a>
+      {% if cliente.whatsapp %}
+      <a href="https://wa.me/{{ cliente.whatsapp | replace('+','') | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank">WhatsApp</a>
+      {% endif %}
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Variáveis globais ─────────────────────────────
+const TOKEN = '{{ token }}';
+const PID   = '{{ proposta.id }}';
+
+// ── Toast ─────────────────────────────────────────
+function toast(msg, ok=true) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.className = 'toast', 3000);
+}
+
+// ── Tarefas do cliente ────────────────────────────
+function abrirEntrega(id, tipo) {
+  document.getElementById('form-' + id).classList.add('open');
+}
+function fecharEntrega(id) {
+  document.getElementById('form-' + id).classList.remove('open');
+}
+async function confirmarEntrega(id, tipo) {
+  let resposta = tipo === 'confirmacao' ? 'Confirmado' : '';
+  if (tipo !== 'confirmacao') {
+    const inp = document.getElementById('input-' + id);
+    resposta = inp ? inp.value.trim() : '';
+    if (!resposta) { toast('Preencha o campo antes de confirmar.', false); return; }
+  }
+  try {
+    const r = await fetch(`/api/tarefas/${id}/resposta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: TOKEN, resposta })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('✓ Entrega registrada!');
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      toast('Erro ao registrar.', false);
+    }
+  } catch(e) {
+    toast('Erro de conexão.', false);
+  }
+}
+
+// ── Mensagens ─────────────────────────────────────
+async function enviarMsg() {
+  const inp  = document.getElementById('msg-input');
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = '';
+  inp.style.height = '';
+  try {
+    const r = await fetch(`/api/mensagens/${PID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: TOKEN, texto })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      const list = document.getElementById('msg-list');
+      const vazia = list.querySelector('.msg-vazia');
+      if (vazia) vazia.remove();
+      const now = new Date();
+      const hora = now.getDate().toString().padStart(2,'0') + '/' +
+                   (now.getMonth()+1).toString().padStart(2,'0') + ' ' +
+                   now.getHours().toString().padStart(2,'0') + ':' +
+                   now.getMinutes().toString().padStart(2,'0');
+      const div = document.createElement('div');
+      div.className = 'msg-item cliente';
+      div.innerHTML = `<div class="msg-bubble">${texto}</div><div class="msg-meta">Você · ${hora}</div>`;
+      list.appendChild(div);
+      list.scrollTop = list.scrollHeight;
+    }
+  } catch(e) {
+    toast('Erro ao enviar mensagem.', false);
+    inp.value = texto;
+  }
+}
+
+// Auto-resize textarea
+document.getElementById('msg-input').addEventListener('input', function() {
+  this.style.height = '';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+// Scroll pro fim das mensagens ao carregar
+(function() {
+  const list = document.getElementById('msg-list');
+  if (list) list.scrollTop = list.scrollHeight;
+})();
+
+// ── Gráfico de barras ─────────────────────────────
+{% if metricas and metricas|length > 1 %}
+(function() {
+  const dados = {{ metricas | reverse | list | tojson }};
+  const canvas = document.getElementById('chart-impressoes');
+  if (!canvas || !canvas.getContext) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 40;
+  const H = 120;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const vals = dados.map(d => d.impressoes || 0);
+  const max  = Math.max(...vals, 1);
+  const n    = dados.length;
+  const pad  = 20;
+  const barW = Math.max(4, (W - pad*2) / n - 6);
+  const gap  = (W - pad*2 - barW * n) / (n - 1 || 1);
+
+  const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#1a1916';
+
+  dados.forEach((d, i) => {
+    const x   = pad + i * (barW + gap);
+    const pct = (d.impressoes || 0) / max;
+    const barH = Math.max(4, pct * (H - 36));
+    const y   = H - 20 - barH;
+
+    // Barra
+    ctx.fillStyle = primary;
+    ctx.globalAlpha = 0.15 + pct * 0.85;
+    const r = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + barW - r, y);
+    ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+    ctx.lineTo(x + barW, y + barH);
+    ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Label mês
+    ctx.fillStyle = '#9c9890';
+    ctx.font = `500 ${Math.min(10, barW + 2)}px Montserrat, sans-serif`;
+    ctx.textAlign = 'center';
+    const mes = (d.mes_ano || '').substring(5);
+    ctx.fillText(mes, x + barW/2, H - 4);
+
+    // Valor no topo
+    if (pct > 0.1) {
+      ctx.fillStyle = primary;
+      ctx.font = `700 9px Montserrat, sans-serif`;
+      const label = d.impressoes >= 1000 ? (d.impressoes/1000).toFixed(1)+'k' : String(d.impressoes || 0);
+      ctx.fillText(label, x + barW/2, y - 4);
+    }
+  });
+})();
+{% endif %}
+
+// ── Subnav ativo no scroll ────────────────────────
+(function() {
+  const items = document.querySelectorAll('.subnav-item[href^="#"]');
+  const secs  = [...items].map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  function update() {
+    let cur = '';
+    secs.forEach(s => { if (s.getBoundingClientRect().top <= 120) cur = '#' + s.id; });
+    items.forEach(a => a.classList.toggle('active', a.getAttribute('href') === cur));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>
