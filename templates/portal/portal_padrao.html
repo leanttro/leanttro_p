@@ -526,6 +526,12 @@ footer{
       Materiais
     </a>
     {% endif %}
+    {% if proposta.contrato_texto %}
+    <a href="#contrato" class="subnav-item">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Contrato{% if contrato.contrato_assinado %} ✓{% endif %}
+    </a>
+    {% endif %}
     <a href="#mensagens" class="subnav-item">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       Mensagens
@@ -886,6 +892,76 @@ footer{
 </section>
 {% endif %}
 
+<!-- ── CONTRATO ── -->
+{% if proposta.contrato_texto %}
+<section id="contrato">
+  <div class="container">
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Contrato de Prestação de Serviços</span>
+        {% if contrato.contrato_assinado %}
+        <span style="font-size:.75rem;font-weight:600;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:4px 12px">
+          ✓ Assinado por {{ contrato.contrato_nome_assinou }} em {{ contrato.contrato_assinado_em[:10].split('-')|reverse|join('/') }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Texto do contrato -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:32px;margin-bottom:24px;font-size:.85rem;line-height:1.9;color:var(--text2);white-space:pre-line;max-height:500px;overflow-y:auto">
+        {{ proposta.contrato_texto }}
+      </div>
+
+      {% if not contrato.contrato_assinado %}
+      <!-- Área de assinatura -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px" id="assinar-area">
+        <div style="font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:16px">Assinar contrato</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:16px;line-height:1.6">
+          Ao assinar, você confirma que leu e concorda com todos os termos acima.
+          Sua assinatura eletrônica tem validade jurídica conforme a Lei 14.063/2020.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:420px">
+          <input id="assinar-nome" type="text" placeholder="Digite seu nome completo"
+            style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none">
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:.8rem;color:var(--text2);cursor:pointer">
+            <input type="checkbox" id="assinar-check" style="margin-top:2px;flex-shrink:0">
+            Li e concordo com todos os termos deste contrato
+          </label>
+          <button onclick="assinarContrato()" id="btn-assinar"
+            style="padding:12px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:.88rem;font-weight:700;font-family:inherit;cursor:pointer;align-self:flex-start;transition:.15s">
+            Assinar contrato
+          </button>
+        </div>
+        <div id="assinar-msg" style="margin-top:12px;font-size:.8rem;display:none"></div>
+      </div>
+      {% else %}
+      <!-- Já assinado -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px;display:flex;align-items:center;gap:14px">
+        <div style="width:40px;height:40px;background:#16a34a;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#15803d">Contrato assinado com sucesso</div>
+          <div style="font-size:.78rem;color:#166534;margin-top:2px">
+            Por: {{ contrato.contrato_nome_assinou }} · {{ contrato.contrato_assinado_em[:10].split('-')|reverse|join('/') }}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Botão download PDF -->
+      <div style="margin-top:16px">
+        <button onclick="downloadContratoPDF()"
+          style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text2);transition:.15s">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Baixar PDF
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <!-- ── MENSAGENS ── -->
 <section id="mensagens">
   <div class="container">
@@ -1133,6 +1209,98 @@ document.getElementById('msg-input').addEventListener('input', function() {
   window.addEventListener('scroll', update, { passive: true });
   update();
 })();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+// ── Assinar contrato ──────────────────────────────────────
+async function assinarContrato() {
+  const nome  = document.getElementById('assinar-nome').value.trim();
+  const check = document.getElementById('assinar-check').checked;
+  const msg   = document.getElementById('assinar-msg');
+  const btn   = document.getElementById('btn-assinar');
+
+  if (!nome) {
+    msg.style.display = 'block';
+    msg.style.color   = '#dc2626';
+    msg.textContent   = 'Digite seu nome completo.';
+    return;
+  }
+  if (!check) {
+    msg.style.display = 'block';
+    msg.style.color   = '#dc2626';
+    msg.textContent   = 'Você precisa confirmar que leu e concorda com os termos.';
+    return;
+  }
+
+  btn.disabled     = true;
+  btn.textContent  = 'Assinando...';
+
+  const res = await fetch('/api/propostas/{{ proposta.id }}/assinar-contrato', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ token: '{{ token }}', nome })
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    document.getElementById('assinar-area').innerHTML = `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px;display:flex;align-items:center;gap:14px">
+        <div style="width:40px;height:40px;background:#16a34a;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#15803d">Contrato assinado com sucesso!</div>
+          <div style="font-size:.78rem;color:#166534;margin-top:2px">Por: ${nome}</div>
+        </div>
+      </div>`;
+  } else {
+    btn.disabled    = false;
+    btn.textContent = 'Assinar contrato';
+    msg.style.display = 'block';
+    msg.style.color   = '#dc2626';
+    msg.textContent   = data.erro || 'Erro ao assinar. Tente novamente.';
+  }
+}
+
+// ── Download PDF ──────────────────────────────────────────
+function downloadContratoPDF() {
+  const titulo   = {{ proposta.titulo | tojson }};
+  const cliente  = {{ (cliente.empresa or cliente.nome) | tojson }};
+  const texto    = {{ (proposta.contrato_texto or '') | tojson }};
+  const assinado = {{ 'true' if contrato.contrato_assinado else 'false' }};
+  const nomeSig  = {{ (contrato.contrato_nome_assinou or '') | tojson }};
+  const dataSig  = {{ (contrato.contrato_assinado_em[:10] if contrato.contrato_assinado_em else '') | tojson }};
+
+  const rodape = assinado
+    ? `<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ccc;font-size:11px;color:#666">
+        ✓ Assinado eletronicamente por <strong>${nomeSig}</strong> em ${dataSig.split('-').reverse().join('/')} — válido conforme Lei 14.063/2020
+       </div>`
+    : `<div style="margin-top:60px;padding-top:16px;border-top:1px solid #000;font-size:11px;color:#333">
+        Assinatura do Contratante: _____________________________ Data: ___/___/______
+       </div>`;
+
+  const html = `
+    <div style="font-family:Georgia,serif;font-size:12px;line-height:1.8;color:#111;padding:40px;max-width:700px">
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="font-size:18px;font-weight:bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</div>
+        <div style="font-size:12px;color:#555;margin-top:6px">${titulo} — ${cliente}</div>
+      </div>
+      <div style="white-space:pre-wrap">${texto}</div>
+      ${rodape}
+      <div style="margin-top:16px;font-size:10px;color:#999;text-align:center">Leanttro Tecnologia · CNPJ 63.556.406/0001-75 · São Paulo/SP · leanttro.com</div>
+    </div>`;
+
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.appendChild(el);
+
+  html2pdf().set({
+    margin: 0,
+    filename: `contrato-${titulo.toLowerCase().replace(/\s+/g,'-')}.pdf`,
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(el).save().then(() => document.body.removeChild(el));
+}
 </script>
 </body>
 </html>
