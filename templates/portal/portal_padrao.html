@@ -482,13 +482,8 @@ footer{
 <header>
   <div class="header-inner">
     <div class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
-      <div>
-        <div>Leanttro<strong>Portal</strong></div>
-        <div class="logo-sub">{{ cliente.empresa or cliente.nome }}</div>
-      </div>
+      <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:24px;width:auto;object-fit:contain;flex-shrink:0">
+      <div class="logo-sub" style="margin-left:8px">{{ cliente.empresa or cliente.nome }}</div>
     </div>
 
     <div class="header-right">
@@ -539,6 +534,11 @@ footer{
 <!-- ── HERO ── -->
 <section class="hero">
   <div class="container">
+    {% if cliente.logo_url %}
+    <div style="margin-bottom:20px">
+      <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}" style="max-height:56px;max-width:180px;object-fit:contain;border-radius:0;filter:brightness(0) invert(1);opacity:.9">
+    </div>
+    {% endif %}
     <span class="hero-eyebrow">{{ proposta.status | replace('_',' ') | upper }}</span>
     <h1>{{ proposta.titulo }}</h1>
     {% if proposta.descricao %}
@@ -940,10 +940,8 @@ footer{
 <footer>
   <div class="footer-inner">
     <div class="footer-brand">
-      <div class="footer-brand-mark">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
-      Leanttro Portal &nbsp;·&nbsp; Portal privado de {{ cliente.nome }}
+      <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro" style="height:16px;width:auto;object-fit:contain;opacity:.5;margin-right:4px">
+      Portal privado de {{ cliente.nome }}
     </div>
     <div class="footer-links">
       <a href="https://leanttro.com" target="_blank">leanttro.com</a>
