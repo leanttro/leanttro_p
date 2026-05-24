@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métricas — {{ cliente.empresa or cliente.nome }}</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#1a1916;
+  --primary-rgb:26,25,22;
+  --bg:#f7f7f5;
+  --surface:#ffffff;
+  --surface2:#f0efe9;
+  --border:#e5e3db;
+  --border-light:#eeede7;
+  --text:#1a1916;
+  --text2:#5a5750;
+  --text3:#9c9890;
+  --green:#16a34a;
+  --green-light:#f0fdf4;
+  --amber:#d97706;
+  --amber-light:#fffbeb;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --blue:#2563eb;
+  --blue-light:#eff6ff;
+  --radius:12px;
+  --radius-sm:8px;
+  --radius-xs:6px;
+  --sans:'Montserrat',sans-serif;
+  --shadow:0 1px 4px rgba(0,0,0,.06),0 2px 12px rgba(0,0,0,.04);
+  --shadow-md:0 4px 24px rgba(0,0,0,.09);
+  --transition:.2s ease;
+}
+
+/* Dark mode */
+[data-theme="dark"]{
+  --bg:#0f0e0d;
+  --surface:#1a1916;
+  --surface2:#242320;
+  --border:#2e2c28;
+  --border-light:#2e2c28;
+  --text:#f5f4f0;
+  --text2:#c4c0b8;
+  --text3:#6b6760;
+  --shadow:0 1px 4px rgba(0,0,0,.3),0 2px 12px rgba(0,0,0,.2);
+  --shadow-md:0 4px 24px rgba(0,0,0,.4);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;font-size:14px;transition:background-color var(--transition),color var(--transition)}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+.container{max-width:920px;margin:0 auto;padding:0 20px}
+
+/* ── HEADER ── */
+header{
+  background:rgba(247,247,245,.92);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:200;
+  transition:background-color var(--transition);
+}
+[data-theme="dark"] header{background:rgba(15,14,13,.92)}
+.header-inner{
+  max-width:920px;margin:0 auto;padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;gap:12px;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-img{height:24px;width:auto;object-fit:contain;flex-shrink:0}
+.logo-divider{width:1px;height:18px;background:var(--border)}
+.logo-empresa{font-size:.8rem;font-weight:600;color:var(--text2);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.header-right{display:flex;align-items:center;gap:8px}
+
+/* Theme toggle */
+.theme-btn{
+  width:32px;height:32px;border:1px solid var(--border);border-radius:var(--radius-xs);
+  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text3);transition:all var(--transition);flex-shrink:0;
+}
+.theme-btn:hover{color:var(--text);border-color:var(--text3)}
+.theme-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.icon-moon{display:none}
+[data-theme="dark"] .icon-sun{display:none}
+[data-theme="dark"] .icon-moon{display:block}
+
+/* ── BANNER PERFORMANCE ── */
+.perf-banner{
+  background:var(--primary);
+  padding:28px 20px 24px;
+}
+[data-theme="dark"] .perf-banner{background:var(--surface)}
+.perf-banner .container{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.perf-banner-left{}
+.perf-eyebrow{
+  font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);margin-bottom:6px;display:block;
+}
+[data-theme="dark"] .perf-eyebrow{color:var(--text3)}
+.perf-title{
+  font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1.2;
+}
+[data-theme="dark"] .perf-title{color:var(--text)}
+.perf-sub{font-size:.78rem;color:rgba(255,255,255,.6);margin-top:4px}
+[data-theme="dark"] .perf-sub{color:var(--text3)}
+.perf-banner-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ── BOTÕES ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:var(--radius-xs);
+  font-size:.75rem;font-weight:700;font-family:var(--sans);
+  cursor:pointer;border:none;transition:all var(--transition);
+  letter-spacing:.01em;white-space:nowrap;
+}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0}
+.btn-primary{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.btn-primary:hover{background:rgba(255,255,255,.25)}
+[data-theme="dark"] .btn-primary{background:var(--surface2);color:var(--text);border-color:var(--border)}
+[data-theme="dark"] .btn-primary:hover{background:var(--border)}
+.btn-ia{background:#fff;color:var(--primary);border:1px solid rgba(255,255,255,.3)}
+.btn-ia:hover{background:rgba(255,255,255,.9)}
+[data-theme="dark"] .btn-ia{background:var(--primary);color:#fff;border-color:rgba(255,255,255,.1)}
+.btn-google{
+  background:#fff;border:1px solid #dadce0;color:#3c4043;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:var(--radius-xs);
+  font-size:.75rem;font-weight:600;font-family:var(--sans);
+  cursor:pointer;transition:all var(--transition);
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+.btn-google:hover{box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.btn-google svg{width:16px;height:16px;flex-shrink:0}
+.btn-sm{padding:6px 12px;font-size:.7rem}
+
+/* ── MAIN CONTENT ── */
+.main-content{max-width:920px;margin:0 auto;padding:24px 20px 60px}
+
+/* ── CONNECT BANNERS ── */
+.connect-banner{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;margin-bottom:10px;flex-wrap:wrap;
+}
+.connect-left{display:flex;align-items:center;gap:12px}
+.connect-icon{
+  width:36px;height:36px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.connect-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.connect-title{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:2px}
+.connect-sub{font-size:.72rem;color:var(--text3)}
+.connect-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* Status pills */
+.conn-status{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:.65rem;font-weight:700;padding:3px 9px;
+  border-radius:20px;text-transform:uppercase;letter-spacing:.3px;
+}
+.sdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.s-on{background:var(--green-light);color:var(--green)}.s-on .sdot{background:var(--green)}
+.s-off{background:var(--red-light);color:var(--red)}.s-off .sdot{background:var(--red)}
+
+/* ── AI INSIGHT ── */
+.insight-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+  margin-bottom:14px;display:flex;gap:14px;align-items:flex-start;
+  border-left:3px solid var(--primary);
+}
+[data-theme="dark"] .insight-card{border-left-color:rgba(255,255,255,.3)}
+.insight-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.insight-title{font-size:.78rem;font-weight:800;color:var(--text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.insight-text{font-size:.8rem;color:var(--text2);line-height:1.65}
+
+/* Skeleton */
+.sk{height:11px;background:var(--border);border-radius:4px;margin-bottom:7px;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── TABS ── */
+.tabs-wrap{margin-bottom:18px}
+.tabs{
+  display:flex;gap:2px;border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{
+  padding:9px 16px;font-size:.75rem;font-weight:600;
+  cursor:pointer;border:none;background:none;
+  color:var(--text3);border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all var(--transition);
+  font-family:var(--sans);white-space:nowrap;flex-shrink:0;
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+[data-theme="dark"] .tab-btn.active{color:var(--text);border-bottom-color:var(--text)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* ── PERIOD BAR ── */
+.period-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.period-btn{
+  padding:5px 13px;border-radius:20px;
+  font-size:.7rem;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);
+  background:transparent;color:var(--text3);
+  transition:all var(--transition);font-family:var(--sans);
+}
+.period-btn:hover{color:var(--text);background:var(--surface2)}
+.period-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+[data-theme="dark"] .period-btn.active{background:var(--text);color:var(--bg)}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:700px){.stats-grid{grid-template-columns:1fr 1fr}}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+}
+.stat-label{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--text3);margin-bottom:7px;
+}
+.stat-value{
+  font-size:1.5rem;font-weight:800;letter-spacing:-.04em;
+  line-height:1;margin-bottom:4px;color:var(--text);
+}
+.stat-trend{font-size:.68rem;color:var(--text3)}
+
+/* ── CHART CARD ── */
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;margin-bottom:12px;
+}
+.chart-title{
+  font-size:.65rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--text3);margin-bottom:14px;
+}
+.chart-wrap{position:relative;height:190px;width:100%}
+
+/* ── TABLE CARD ── */
+.table-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:12px;
+}
+.table-header{
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.table-title{
+  font-size:.65rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--text3);
+}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;padding:9px 18px;
+  font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--text3);
+  background:var(--surface2);border-bottom:1px solid var(--border);
+}
+td{padding:10px 18px;font-size:.78rem;border-bottom:1px solid var(--border-light)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.td-url{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--blue);font-size:.72rem}
+.td-num{font-weight:700;text-align:right}
+th.th-num{text-align:right}
+.mini-bar{height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:5px}
+.mini-bar-fill{height:100%;border-radius:99px}
+
+/* ── LOADING & EMPTY ── */
+.loading-state{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;padding:36px;color:var(--text3);font-size:.78rem;
+}
+.spinner{
+  width:16px;height:16px;border:2px solid var(--border);
+  border-top-color:var(--primary);border-radius:50%;
+  animation:spin .7s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:36px 20px;color:var(--text3)}
+.empty-state svg{
+  width:32px;height:32px;stroke:var(--border);fill:none;stroke-width:1.5;
+  margin:0 auto 10px;display:block;
+}
+.empty-state p{font-size:.78rem;margin-bottom:14px}
+.empty-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;border-radius:var(--radius-xs);
+  background:var(--primary);color:#fff;
+  font-size:.72rem;font-weight:700;font-family:var(--sans);
+  border:none;cursor:pointer;transition:all var(--transition);
+}
+.empty-btn:hover{opacity:.85}
+
+/* ── ACESSO BLOQUEADO ── */
+.bloqueado-wrap{
+  min-height:calc(100vh - 60px);
+  display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;
+}
+.bloqueado-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:40px 36px;
+  text-align:center;max-width:400px;width:100%;
+  box-shadow:var(--shadow-md);
+}
+.bloqueado-icon{
+  width:52px;height:52px;background:var(--surface2);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 18px;
+}
+.bloqueado-icon svg{width:22px;height:22px;stroke:var(--text3);fill:none;stroke-width:2}
+.bloqueado-title{font-size:1.05rem;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+.bloqueado-sub{font-size:.82rem;color:var(--text3);line-height:1.65;margin-bottom:24px}
+.btn-wpp{
+  display:inline-flex;align-items:center;gap:7px;
+  background:#25D366;color:#fff;padding:10px 20px;border-radius:var(--radius-xs);
+  font-size:.78rem;font-weight:700;font-family:var(--sans);
+  border:none;cursor:pointer;transition:.2s;
+}
+.btn-wpp:hover{background:#1da850}
+.btn-wpp svg{width:15px;height:15px;flex-shrink:0}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--text);color:var(--bg);padding:10px 16px;
+  border-radius:var(--radius-xs);font-size:.75rem;font-weight:600;
+  font-family:var(--sans);box-shadow:var(--shadow-md);
+  transform:translateY(12px);opacity:0;
+  transition:.25s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);padding:20px;
+  text-align:center;
+}
+.footer-inner{
+  max-width:920px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+}
+.footer-brand{display:flex;align-items:center;gap:7px;font-size:.68rem;color:var(--text3)}
+.footer-brand img{height:16px;width:auto;opacity:.6}
+.footer-note{font-size:.68rem;color:var(--text3)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .perf-banner .container{flex-direction:column;align-items:flex-start}
+  .perf-banner-right{width:100%}
+  .header-right .btn-primary{display:none}
+  .connect-banner{flex-direction:column;align-items:flex-start}
+  td,th{padding:8px 12px}
+  .td-url{max-width:100px}
+  .stat-value{font-size:1.2rem}
+  .main-content{padding:16px 16px 60px}
+  .footer-inner{flex-direction:column;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png"
+           alt="Leanttro" class="logo-img">
+      {% if cliente.logo_url %}
+        <div class="logo-divider"></div>
+        <img src="{{ cliente.logo_url }}" alt="{{ cliente.empresa or cliente.nome }}"
+             style="height:22px;width:auto;object-fit:contain;border-radius:4px;flex-shrink:0">
+      {% else %}
+        <div class="logo-divider"></div>
+        <span class="logo-empresa">{{ cliente.empresa or cliente.nome }}</span>
+      {% endif %}
+    </div>
+    <div class="header-right">
+      <button class="theme-btn" onclick="toggleTheme()" title="Alternar tema">
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+{% if not metricas_ativo %}
+<!-- ══════════ ACESSO BLOQUEADO ══════════ -->
+<div class="bloqueado-wrap">
+  <div class="bloqueado-card">
+    <div class="bloqueado-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="bloqueado-title">Acesso não liberado</div>
+    <div class="bloqueado-sub">
+      Seu acesso ao Relatório de Performance ainda não foi ativado.<br>
+      Entre em contato para habilitar este módulo.
+    </div>
+    {% if cliente.whatsapp %}
+    <a href="https://wa.me/{{ cliente.whatsapp | replace(' ','') | replace('+','') | replace('-','') | replace('(','') | replace(')','') }}"
+       target="_blank" class="btn-wpp">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+      Falar no WhatsApp
+    </a>
+    {% else %}
+    <div style="font-size:.78rem;color:var(--text3)">Entre em contato com sua agência.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+<!-- ══════════ DASHBOARD COMPLETO ══════════ -->
+
+<!-- ── BANNER PERFORMANCE ── -->
+<div class="perf-banner">
+  <div class="container">
+    <div class="perf-banner-left">
+      <span class="perf-eyebrow">Relatório de Performance</span>
+      <div class="perf-title">{{ cliente.empresa or cliente.nome }}</div>
+      <div class="perf-sub">Google Search Console &amp; Analytics 4 em tempo real</div>
+    </div>
+    <div class="perf-banner-right">
+      <button class="btn btn-ia" onclick="analisarComIA()">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        Analisar com IA
+      </button>
+      <button class="btn btn-primary" onclick="sincronizarDados()" id="btn-sync">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Sincronizar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONTEÚDO PRINCIPAL ── -->
+<div class="main-content">
+
+  <!-- BANNER GSC -->
+  <div class="connect-banner">
+    <div class="connect-left">
+      <div class="connect-icon" style="background:rgba(66,133,244,.1);color:#4285f4">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <div>
+        <div class="connect-title">Google Search Console</div>
+        <div class="connect-sub" id="gsc-sub">Verificando conexão...</div>
+      </div>
+    </div>
+    <div class="connect-right">
+      <span class="conn-status s-off" id="gsc-status"><span class="sdot"></span> Desconectado</span>
+      <button class="btn-google" onclick="conectarGoogle('gsc')" id="btn-gsc">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Conectar GSC
+      </button>
+    </div>
+  </div>
+
+  <!-- BANNER GA4 -->
+  <div class="connect-banner">
+    <div class="connect-left">
+      <div class="connect-icon" style="background:rgba(251,188,5,.1);color:#fbbc05">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div>
+        <div class="connect-title">Google Analytics 4</div>
+        <div class="connect-sub" id="ga4-sub">Verificando conexão...</div>
+      </div>
+    </div>
+    <div class="connect-right">
+      <span class="conn-status s-off" id="ga4-status"><span class="sdot"></span> Desconectado</span>
+      <button class="btn-google" onclick="conectarGoogle('ga4')" id="btn-ga4">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Conectar GA4
+      </button>
+    </div>
+  </div>
+
+  <!-- AI INSIGHT -->
+  <div class="insight-card" id="insight-card" style="display:none">
+    <div class="insight-icon">🤖</div>
+    <div style="flex:1">
+      <div class="insight-title">Análise da IA</div>
+      <div class="insight-text" id="insight-text"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('gsc',this)">
+        Search Console
+      </button>
+      <button class="tab-btn" onclick="switchTab('ga4',this)">
+        Analytics 4
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TAB GSC ── -->
+  <div class="tab-pane active" id="tab-gsc">
+    <div class="period-bar">
+      <button class="period-btn active" onclick="setPeriodGSC(7,this)">7 dias</button>
+      <button class="period-btn" onclick="setPeriodGSC(28,this)">28 dias</button>
+      <button class="period-btn" onclick="setPeriodGSC(90,this)">90 dias</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Cliques</div>
+        <div class="stat-value" id="gsc-cliques">—</div>
+        <div class="stat-trend" id="gsc-cliques-t">Aguardando dados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Impressões</div>
+        <div class="stat-value" id="gsc-impressoes">—</div>
+        <div class="stat-trend" id="gsc-impressoes-t">Aguardando dados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CTR Médio</div>
+        <div class="stat-value" id="gsc-ctr">—</div>
+        <div class="stat-trend" id="gsc-ctr-t">Taxa de clique</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Posição Média</div>
+        <div class="stat-value" id="gsc-posicao">—</div>
+        <div class="stat-trend" id="gsc-posicao-t">No Google</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Cliques e Impressões por dia</div>
+      <div class="chart-wrap"><canvas id="chart-gsc"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Top Páginas</span>
+      </div>
+      <div id="table-pages">
+        <div class="loading-state"><div class="spinner"></div> Aguardando conexão...</div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Top Palavras-chave</span>
+      </div>
+      <div id="table-keywords">
+        <div class="loading-state"><div class="spinner"></div> Aguardando conexão...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB GA4 ── -->
+  <div class="tab-pane" id="tab-ga4">
+    <div class="period-bar">
+      <button class="period-btn active" onclick="setPeriodGA4(7,this)">7 dias</button>
+      <button class="period-btn" onclick="setPeriodGA4(28,this)">28 dias</button>
+      <button class="period-btn" onclick="setPeriodGA4(90,this)">90 dias</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Sessões</div>
+        <div class="stat-value" id="ga4-sessoes">—</div>
+        <div class="stat-trend" id="ga4-sessoes-t">Aguardando dados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Usuários</div>
+        <div class="stat-value" id="ga4-usuarios">—</div>
+        <div class="stat-trend" id="ga4-usuarios-t">Aguardando dados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Visualizações</div>
+        <div class="stat-value" id="ga4-pageviews">—</div>
+        <div class="stat-trend" id="ga4-pageviews-t">Aguardando dados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tempo Médio</div>
+        <div class="stat-value" id="ga4-tempo">—</div>
+        <div class="stat-trend" id="ga4-tempo-t">Por sessão</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Sessões por dia</div>
+      <div class="chart-wrap"><canvas id="chart-ga4"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Canais de Tráfego</span>
+      </div>
+      <div id="table-canais">
+        <div class="loading-state"><div class="spinner"></div> Aguardando conexão...</div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Páginas Mais Visitadas</span>
+      </div>
+      <div id="table-ga4-pages">
+        <div class="loading-state"><div class="spinner"></div> Aguardando conexão...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-content -->
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro">
+      Powered by Leanttro
+    </div>
+    <div class="footer-note">Dados atualizados via Google APIs</div>
+  </div>
+</footer>
+
+{% endif %}{# fim metricas_ativo #}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ── Config injetada pelo Jinja2 ──────────────────
+const SLUG = "{{ cliente.slug }}";
+
+// ── Estado ──────────────────────────────────────
+let pGSC = 7, pGA4 = 7;
+let cGSC = null, cGA4 = null;
+let dGSC = null, dGA4 = null;
+
+// ── Tema ────────────────────────────────────────
+function toggleTheme() {
+  const dark = document.body.getAttribute('data-theme') === 'dark';
+  document.body.setAttribute('data-theme', dark ? 'light' : 'dark');
+  localStorage.setItem('lt_metricas_theme', dark ? 'light' : 'dark');
+  // Re-renderiza gráficos com as novas cores
+  if (cGSC) { cGSC.destroy(); cGSC = null; }
+  if (cGA4) { cGA4.destroy(); cGA4 = null; }
+  if (dGSC) renderGSC(dGSC);
+  if (dGA4) renderGA4(dGA4);
+}
+const savedTheme = localStorage.getItem('lt_metricas_theme');
+if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
+
+// ── Toast ────────────────────────────────────────
+function toast(msg, ok = true) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.className = 'toast', 3200);
+}
+
+// ── Tabs ─────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  // Re-renderiza chart após transição (container precisa ter dimensão)
+  setTimeout(() => {
+    if (tab === 'gsc' && dGSC) renderGSC(dGSC);
+    if (tab === 'ga4' && dGA4) renderGA4(dGA4);
+  }, 50);
+}
+
+// ── Períodos ─────────────────────────────────────
+function setPeriodGSC(d, el) {
+  document.querySelectorAll('#tab-gsc .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  pGSC = d;
+  loadGSC();
+}
+function setPeriodGA4(d, el) {
+  document.querySelectorAll('#tab-ga4 .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  pGA4 = d;
+  loadGA4();
+}
+
+// ── Cores dos gráficos ───────────────────────────
+function gc() {
+  const dark = document.body.getAttribute('data-theme') === 'dark';
+  return {
+    g: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    t: dark ? '#6b6760' : '#9c9890'
+  };
+}
+
+// ── Check status de conexão ──────────────────────
+async function checkStatus() {
+  try {
+    const r = await fetch(`/api/metricas/${SLUG}/status`);
+    const d = await r.json();
+    if (d.gsc_conectado) {
+      document.getElementById('gsc-status').className = 'conn-status s-on';
+      document.getElementById('gsc-status').innerHTML = '<span class="sdot"></span> Conectado';
+      document.getElementById('gsc-sub').textContent = d.gsc_site || 'Site vinculado';
+      document.getElementById('btn-gsc').textContent = 'Reconectar';
+      loadGSC();
+    } else {
+      document.getElementById('gsc-sub').textContent = 'Clique para autorizar acesso ao Search Console';
+    }
+    if (d.ga4_conectado) {
+      document.getElementById('ga4-status').className = 'conn-status s-on';
+      document.getElementById('ga4-status').innerHTML = '<span class="sdot"></span> Conectado';
+      document.getElementById('ga4-sub').textContent = d.ga4_property || 'Propriedade vinculada';
+      document.getElementById('btn-ga4').textContent = 'Reconectar';
+      loadGA4();
+    } else {
+      document.getElementById('ga4-sub').textContent = 'Clique para autorizar acesso ao Analytics';
+    }
+  } catch {
+    document.getElementById('gsc-sub').textContent = 'Clique para autorizar acesso ao Search Console';
+    document.getElementById('ga4-sub').textContent = 'Clique para autorizar acesso ao Analytics';
+  }
+}
+
+// ── OAuth ────────────────────────────────────────
+function conectarGoogle(servico) {
+  window.location.href = `/api/metricas/${SLUG}/oauth/start?servico=${servico}`;
+}
+
+// ── Sincronizar ──────────────────────────────────
+async function sincronizarDados() {
+  const b = document.getElementById('btn-sync');
+  b.disabled = true;
+  b.innerHTML = '<div class="spinner" style="width:13px;height:13px;border-width:2px;border-top-color:currentColor"></div> Sincronizando...';
+  try {
+    const r = await fetch(`/api/metricas/${SLUG}/sync`, { method: 'POST' });
+    const d = await r.json();
+    if (d.success) {
+      toast('Dados sincronizados!');
+      loadGSC();
+      loadGA4();
+    } else {
+      toast('Erro: ' + (d.error || 'Falha na sincronização'), false);
+    }
+  } catch {
+    toast('Erro ao sincronizar.', false);
+  } finally {
+    b.disabled = false;
+    b.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Sincronizar';
+  }
+}
+
+// ── GSC ──────────────────────────────────────────
+async function loadGSC() {
+  try {
+    const r = await fetch(`/api/metricas/${SLUG}/gsc?dias=${pGSC}`);
+    const d = await r.json();
+    if (!d.success) { emptyGSC(d.error); return; }
+    dGSC = d;
+    renderGSC(d);
+  } catch {
+    emptyGSC('Conecte o Search Console para ver os dados.');
+  }
+}
+
+function renderGSC(d) {
+  const f = n => Number(n || 0).toLocaleString('pt-BR');
+  document.getElementById('gsc-cliques').textContent = f(d.totais?.cliques);
+  document.getElementById('gsc-impressoes').textContent = f(d.totais?.impressoes);
+  document.getElementById('gsc-ctr').textContent = (d.totais?.ctr || 0).toFixed(1) + '%';
+  document.getElementById('gsc-posicao').textContent = (d.totais?.posicao || 0).toFixed(1);
+  ['cliques', 'impressoes', 'ctr', 'posicao'].forEach(k =>
+    document.getElementById(`gsc-${k}-t`).textContent = `Últimos ${pGSC} dias`
+  );
+
+  const { g, t } = gc();
+  if (cGSC) cGSC.destroy();
+  cGSC = new Chart(document.getElementById('chart-gsc').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: (d.por_dia || []).map(x => new Date(x.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })),
+      datasets: [
+        {
+          label: 'Cliques',
+          data: (d.por_dia || []).map(x => x.cliques || 0),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.07)',
+          tension: 0.4, fill: true, pointRadius: 2, borderWidth: 2
+        },
+        {
+          label: 'Impressões',
+          data: (d.por_dia || []).map(x => x.impressoes || 0),
+          borderColor: '#9333ea',
+          backgroundColor: 'rgba(147,51,234,0.05)',
+          tension: 0.4, fill: true, pointRadius: 2, borderWidth: 2,
+          yAxisID: 'y2'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: t, font: { size: 11, family: 'Montserrat' } } } },
+      scales: {
+        x: { grid: { color: g }, ticks: { color: t, font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { grid: { color: g }, ticks: { color: t, font: { size: 10 } }, position: 'left' },
+        y2: { grid: { drawOnChartArea: false }, ticks: { color: t, font: { size: 10 } }, position: 'right' }
+      }
+    }
+  });
+
+  // Top páginas
+  const pg = d.top_paginas || [];
+  document.getElementById('table-pages').innerHTML = pg.length === 0
+    ? `<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Sem dados de páginas.</p></div>`
+    : `<table><thead><tr><th>Página</th><th class="th-num">Cliques</th><th class="th-num">Impressões</th><th class="th-num">CTR</th><th class="th-num">Posição</th></tr></thead><tbody>${
+        pg.map(p => `<tr>
+          <td class="td-url" title="${p.pagina}">${p.pagina}</td>
+          <td class="td-num">${f(p.cliques)}</td>
+          <td class="td-num">${f(p.impressoes)}</td>
+          <td class="td-num">${(p.ctr || 0).toFixed(1)}%</td>
+          <td class="td-num">${(p.posicao || 0).toFixed(1)}</td>
+        </tr>`).join('')
+      }</tbody></table>`;
+
+  // Top keywords
+  const kw = d.top_keywords || [];
+  document.getElementById('table-keywords').innerHTML = kw.length === 0
+    ? `<div class="empty-state"><p>Sem dados de palavras-chave.</p></div>`
+    : `<table><thead><tr><th>Palavra-chave</th><th class="th-num">Cliques</th><th class="th-num">Impressões</th><th class="th-num">CTR</th><th class="th-num">Posição</th></tr></thead><tbody>${
+        kw.map(k => `<tr>
+          <td>${k.query}</td>
+          <td class="td-num">${f(k.cliques)}</td>
+          <td class="td-num">${f(k.impressoes)}</td>
+          <td class="td-num">${(k.ctr || 0).toFixed(1)}%</td>
+          <td class="td-num">${(k.posicao || 0).toFixed(1)}</td>
+        </tr>`).join('')
+      }</tbody></table>`;
+}
+
+function emptyGSC(msg) {
+  ['gsc-cliques', 'gsc-impressoes', 'gsc-ctr', 'gsc-posicao'].forEach(id =>
+    document.getElementById(id).textContent = '—'
+  );
+  const v = `<div class="empty-state">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <p>${msg || 'Conecte o Search Console.'}</p>
+    <button class="empty-btn" onclick="conectarGoogle('gsc')">Conectar GSC</button>
+  </div>`;
+  document.getElementById('table-pages').innerHTML = v;
+  document.getElementById('table-keywords').innerHTML = '';
+}
+
+// ── GA4 ──────────────────────────────────────────
+async function loadGA4() {
+  try {
+    const r = await fetch(`/api/metricas/${SLUG}/ga4?dias=${pGA4}`);
+    const d = await r.json();
+    if (!d.success) { emptyGA4(d.error); return; }
+    dGA4 = d;
+    renderGA4(d);
+  } catch {
+    emptyGA4('Conecte o Analytics para ver os dados.');
+  }
+}
+
+function renderGA4(d) {
+  const f = n => Number(n || 0).toLocaleString('pt-BR');
+  document.getElementById('ga4-sessoes').textContent = f(d.totais?.sessoes);
+  document.getElementById('ga4-usuarios').textContent = f(d.totais?.usuarios);
+  document.getElementById('ga4-pageviews').textContent = f(d.totais?.pageviews);
+  const seg = d.totais?.tempo_medio || 0;
+  document.getElementById('ga4-tempo').textContent = `${Math.floor(seg / 60)}m${String(Math.floor(seg % 60)).padStart(2, '0')}s`;
+  ['sessoes', 'usuarios', 'pageviews', 'tempo'].forEach(k =>
+    document.getElementById(`ga4-${k}-t`).textContent = `Últimos ${pGA4} dias`
+  );
+
+  const { g, t } = gc();
+  if (cGA4) cGA4.destroy();
+  cGA4 = new Chart(document.getElementById('chart-ga4').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: (d.por_dia || []).map(x => new Date(x.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })),
+      datasets: [{
+        label: 'Sessões',
+        data: (d.por_dia || []).map(x => x.sessoes || 0),
+        backgroundColor: 'rgba(22,163,74,0.7)',
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: t, font: { size: 11, family: 'Montserrat' } } } },
+      scales: {
+        x: { grid: { color: g }, ticks: { color: t, font: { size: 10 }, maxTicksLimit: 10 } },
+        y: { grid: { color: g }, ticks: { color: t, font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Canais
+  const cn = d.canais || [];
+  const tot = cn.reduce((a, x) => a + (x.sessoes || 0), 0);
+  document.getElementById('table-canais').innerHTML = cn.length === 0
+    ? `<div class="empty-state"><p>Sem dados de canais.</p></div>`
+    : `<table><thead><tr><th>Canal</th><th class="th-num">Sessões</th><th class="th-num">Usuários</th><th>% Total</th></tr></thead><tbody>${
+        cn.map(c => {
+          const p = tot > 0 ? Math.round((c.sessoes / tot) * 100) : 0;
+          return `<tr>
+            <td>${c.canal}</td>
+            <td class="td-num">${f(c.sessoes)}</td>
+            <td class="td-num">${f(c.usuarios)}</td>
+            <td style="min-width:80px">
+              <span style="font-size:.72rem;font-weight:700">${p}%</span>
+              <div class="mini-bar"><div class="mini-bar-fill" style="width:${p}%;background:var(--green)"></div></div>
+            </td>
+          </tr>`;
+        }).join('')
+      }</tbody></table>`;
+
+  // Top páginas GA4
+  const pg = d.top_paginas || [];
+  document.getElementById('table-ga4-pages').innerHTML = pg.length === 0
+    ? `<div class="empty-state"><p>Sem dados.</p></div>`
+    : `<table><thead><tr><th>Página</th><th class="th-num">Visualizações</th><th class="th-num">Usuários</th></tr></thead><tbody>${
+        pg.map(p => `<tr>
+          <td class="td-url" title="${p.pagina}">${p.pagina}</td>
+          <td class="td-num">${f(p.pageviews)}</td>
+          <td class="td-num">${f(p.usuarios)}</td>
+        </tr>`).join('')
+      }</tbody></table>`;
+}
+
+function emptyGA4(msg) {
+  ['ga4-sessoes', 'ga4-usuarios', 'ga4-pageviews', 'ga4-tempo'].forEach(id =>
+    document.getElementById(id).textContent = '—'
+  );
+  const v = `<div class="empty-state">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <p>${msg || 'Conecte o Analytics.'}</p>
+    <button class="empty-btn" onclick="conectarGoogle('ga4')">Conectar GA4</button>
+  </div>`;
+  document.getElementById('table-canais').innerHTML = v;
+  document.getElementById('table-ga4-pages').innerHTML = '';
+}
+
+// ── Análise com IA ───────────────────────────────
+async function analisarComIA() {
+  if (!dGSC && !dGA4) {
+    toast('Conecte pelo menos um serviço antes de analisar.', false);
+    return;
+  }
+  const card = document.getElementById('insight-card');
+  const txt  = document.getElementById('insight-text');
+  card.style.display = 'flex';
+  txt.innerHTML = '<div class="sk" style="width:90%"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:80%"></div>';
+  try {
+    const r = await fetch(`/api/metricas/${SLUG}/ia-analise`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gsc: dGSC?.totais, ga4: dGA4?.totais, periodo: pGSC })
+    });
+    const d = await r.json();
+    txt.textContent = d.success ? d.analise : (d.error || 'Verifique se a chave de IA está configurada.');
+  } catch {
+    txt.textContent = 'Erro ao conectar com a IA.';
+  }
+}
+
+// ── Init ─────────────────────────────────────────
+{% if metricas_ativo %}
+checkStatus();
+{% endif %}
+</script>
+</body>
+</html>
