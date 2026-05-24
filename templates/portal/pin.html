@@ -4,145 +4,188 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Acesso seguro — Leanttro</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f5;
+  --surface:#ffffff;
+  --surface2:#f0efe9;
+  --border:#e5e3db;
+  --border2:#d0cec4;
+  --text:#1a1916;
+  --text2:#5a5750;
+  --text3:#9c9890;
+  --accent:#2563eb;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+}
 
-  body {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #0f0f0f;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding: 24px;
-  }
+body{
+  font-family:'Montserrat',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  font-size:13px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
 
-  .card {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
-    padding: 48px 40px 40px;
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
-    box-shadow: 0 24px 48px rgba(0,0,0,.5);
-  }
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:40px 36px 36px;
+  width:100%;
+  max-width:360px;
+  box-shadow:var(--shadow-md);
+  text-align:center;
+}
 
-  {% if logo_url %}
-  .logo {
-    width: 72px;
-    height: 72px;
-    object-fit: contain;
-    border-radius: 12px;
-    margin-bottom: 24px;
-  }
-  {% endif %}
+.logo-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:28px;
+}
 
-  .lock-icon {
-    width: 52px;
-    height: 52px;
-    background: #c17f3a18;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 24px;
-    font-size: 22px;
-  }
+.logo-wrap img{
+  height:30px;
+  width:auto;
+  object-fit:contain;
+}
 
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #f0f0f0;
-    margin-bottom: 6px;
-  }
+.lock-mark{
+  width:40px;
+  height:40px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 20px;
+}
+.lock-mark svg{
+  width:18px;height:18px;
+  stroke:var(--text2);fill:none;stroke-width:2;
+}
 
-  .subtitle {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 32px;
-    line-height: 1.5;
-  }
+h1{
+  font-size:.92rem;
+  font-weight:700;
+  color:var(--text);
+  margin-bottom:5px;
+  letter-spacing:-.2px;
+}
 
-  /* ── Inputs de dígito ── */
-  .pin-row {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 28px;
-  }
+.subtitle{
+  font-size:.75rem;
+  color:var(--text3);
+  margin-bottom:28px;
+  line-height:1.5;
+}
+.subtitle strong{color:var(--text2);font-weight:600;}
 
-  .pin-digit {
-    width: 60px;
-    height: 68px;
-    background: #111;
-    border: 2px solid #333;
-    border-radius: 10px;
-    font-size: 28px;
-    font-weight: 700;
-    color: #f0f0f0;
-    text-align: center;
-    caret-color: #c17f3a;
-    transition: border-color .15s, box-shadow .15s;
-    -webkit-appearance: none;
-    outline: none;
-  }
+/* ── inputs de dígito ── */
+.pin-row{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:20px;
+}
 
-  .pin-digit:focus {
-    border-color: #c17f3a;
-    box-shadow: 0 0 0 3px #c17f3a22;
-  }
+.pin-digit{
+  width:56px;
+  height:64px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:24px;
+  font-weight:700;
+  font-family:'Montserrat',sans-serif;
+  color:var(--text);
+  text-align:center;
+  outline:none;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+  -webkit-appearance:none;
+}
+.pin-digit:focus{
+  border-color:var(--accent);
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(37,99,235,.08);
+}
+.pin-digit.filled{
+  background:#fff;
+  border-color:var(--border2);
+}
 
-  /* Campo hidden que vai pro form */
-  #pin-hidden { display: none; }
+#pin-hidden{display:none;}
 
-  .btn {
-    width: 100%;
-    padding: 14px;
-    background: #c17f3a;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .15s, transform .1s;
-    letter-spacing: .3px;
-  }
-  .btn:hover  { background: #d4924b; }
-  .btn:active { transform: scale(.98); }
-  .btn:disabled { background: #444; cursor: not-allowed; }
+.btn{
+  width:100%;
+  padding:10px 16px;
+  background:var(--text);
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-sm);
+  font-size:.8rem;
+  font-weight:700;
+  font-family:'Montserrat',sans-serif;
+  cursor:pointer;
+  letter-spacing:.2px;
+  transition:background .15s, transform .1s;
+}
+.btn:hover{background:#333;}
+.btn:active{transform:scale(.98);}
+.btn:disabled{background:var(--border2);cursor:not-allowed;}
 
-  .erro {
-    margin-top: 20px;
-    padding: 10px 14px;
-    background: #ff4d4d18;
-    border: 1px solid #ff4d4d44;
-    border-radius: 8px;
-    color: #ff7070;
-    font-size: 13px;
-  }
+.erro{
+  margin-top:16px;
+  padding:9px 12px;
+  background:var(--red-light);
+  border:1px solid #fecaca;
+  border-radius:var(--radius-sm);
+  color:var(--red);
+  font-size:.73rem;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.erro svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0;}
 
-  .footer {
-    margin-top: 32px;
-    font-size: 11px;
-    color: #3a3a3a;
-  }
+.footer{
+  margin-top:24px;
+  font-size:.65rem;
+  color:var(--text3);
+  letter-spacing:.2px;
+}
 </style>
 </head>
 <body>
 <div class="card">
 
-  {% if logo_url %}
-    <img src="{{ logo_url }}" alt="Logo" class="logo">
-  {% else %}
-    <div class="lock-icon">🔒</div>
-  {% endif %}
+  <div class="logo-wrap">
+    <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="Leanttro">
+  </div>
+
+  <div class="lock-mark">
+    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  </div>
 
   <h1>Acesso seguro</h1>
   <p class="subtitle">
     {% if cliente_nome %}
-      Olá, <strong style="color:#c17f3a">{{ cliente_nome }}</strong>!<br>
+      Olá, <strong>{{ cliente_nome }}</strong>!<br>
     {% endif %}
     Digite seu PIN de 4 dígitos para continuar.
   </p>
@@ -159,27 +202,30 @@
   </form>
 
   {% if erro %}
-    <div class="erro">{{ erro }}</div>
+    <div class="erro">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {{ erro }}
+    </div>
   {% endif %}
 
   <p class="footer">Portal seguro · Leanttro Tecnologia</p>
 </div>
 
 <script>
-  const digits  = [d0, d1, d2, d3];
-  const hidden  = document.getElementById('pin-hidden');
-  const btn     = document.getElementById('btn-entrar');
-  const form    = document.getElementById('pin-form');
+  const digits = [d0, d1, d2, d3];
+  const hidden = document.getElementById('pin-hidden');
+  const btn    = document.getElementById('btn-entrar');
+  const form   = document.getElementById('pin-form');
 
   function update() {
     const val = digits.map(d => d.value).join('');
     hidden.value = val;
     btn.disabled = val.length < 4;
+    digits.forEach(d => d.classList.toggle('filled', d.value !== ''));
   }
 
   digits.forEach((el, i) => {
     el.addEventListener('input', () => {
-      // Aceita só número
       el.value = el.value.replace(/\D/g, '').slice(-1);
       update();
       if (el.value && i < 3) digits[i + 1].focus();
@@ -187,34 +233,32 @@
 
     el.addEventListener('keydown', e => {
       if (e.key === 'Backspace' && !el.value && i > 0) {
-        digits[i - 1].focus();
         digits[i - 1].value = '';
+        digits[i - 1].focus();
         update();
       }
     });
 
-    // Paste no primeiro campo
     el.addEventListener('paste', e => {
       e.preventDefault();
       const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
       digits.forEach((d, j) => { d.value = text[j] || ''; });
       update();
-      const next = Math.min(text.length, 3);
-      digits[next].focus();
+      digits[Math.min(text.length, 3)].focus();
     });
   });
 
-  // Submete ao preencher o último dígito
+  // Submete automaticamente ao preencher o último dígito
   digits[3].addEventListener('input', () => {
-    if (digits[3].value) form.requestSubmit?.() || form.submit();
+    if (digits[3].value) setTimeout(() => form.requestSubmit?.() || form.submit(), 80);
   });
 
-  // Foca no primeiro campo ao carregar
   digits[0].focus();
 
   {% if erro %}
-    // Limpa os campos após erro
-    digits.forEach(d => d.value = '');
+    digits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
+    hidden.value = '';
+    btn.disabled = true;
     digits[0].focus();
   {% endif %}
 </script>
