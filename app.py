@@ -720,7 +720,7 @@ def portal_cliente(token):
     p = query("""
         SELECT p.*, c.nome as cliente_nome, c.empresa as cliente_empresa,
                c.email as cliente_email, c.whatsapp as cliente_whatsapp,
-               c.logo_url as cliente_logo_url
+               c.slug as cliente_slug, c.logo_url as cliente_logo_url
         FROM propostas p JOIN clientes c ON c.id = p.cliente_id
         WHERE p.token = %s OR p.slug = %s
     """, (token, token), one=True)
@@ -759,7 +759,7 @@ def portal_cliente(token):
         proposta=dict(p),
         cliente={"nome": p["cliente_nome"], "empresa": p["cliente_empresa"],
                  "email": p["cliente_email"], "whatsapp": p["cliente_whatsapp"],
-                 "logo_url": p.get("cliente_logo_url")},
+                 "slug": p.get("cliente_slug"), "logo_url": p.get("cliente_logo_url")},
         servicos=[dict(s) for s in servicos],
         tarefas_eu=[dict(t) for t in tarefas_eu],
         tarefas_cliente=[dict(t) for t in tarefas_cliente],
