@@ -366,7 +366,7 @@ tr:hover td{background:#fafaf8}
           </div>
         </div>
         <table>
-          <thead><tr><th>Nome</th><th>Empresa</th><th>E-mail</th><th>WhatsApp</th><th>Propostas</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Empresa</th><th>E-mail</th><th>WhatsApp</th><th>Propostas</th><th>Portal</th><th></th></tr></thead>
           <tbody id="tb-clientes">
             <tr><td colspan="6"><div class="empty"><p>Carregando...</p></div></td></tr>
           </tbody>
@@ -603,6 +603,17 @@ tr:hover td{background:#fafaf8}
       <div class="field"><label>WhatsApp</label><input id="mc-whatsapp" placeholder="(11) 99999-9999"></div>
     </div>
     <div class="form-grid"><div class="field"><label>E-mail</label><input id="mc-email" type="email" placeholder="cliente@empresa.com"></div></div>
+    <div class="form-grid c2">
+      <div class="field"><label>Slug (URL)</label><input id="mc-slug" placeholder="ex: joao-silva" style="font-family:monospace;font-size:.8rem"></div>
+      <div class="field" id="mc-link-wrap" style="display:none"><label>Link do portal</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input id="mc-link" readonly style="font-size:.75rem;color:var(--accent);background:var(--accent-light);border-color:transparent;cursor:pointer" onclick="this.select()">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="copiarLink()" title="Copiar link">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="modal-foot">
     <div class="left">
@@ -703,6 +714,7 @@ async function carregarClientes() {
       <td>${c.email||'—'}</td>
       <td>${c.whatsapp||'—'}</td>
       <td><span class="td-muted">${c.total_propostas||0} proposta(s)</span></td>
+      <td>${c.slug ? `<a href="/c/${c.slug}" target="_blank" class="td-muted" style="color:var(--accent);font-family:monospace;font-size:.75rem">/c/${c.slug}</a>` : '<span class="td-muted">—</span>'}</td>
       <td><div class="td-actions">
         <button class="btn btn-ghost btn-xs" onclick="editarCliente(${c.id})">Editar</button>
       </div></td>
@@ -721,8 +733,9 @@ async function carregarOpcoesClientes() {
 function novoCliente() {
   document.getElementById('mc-titulo').textContent = 'Novo Cliente';
   document.getElementById('mc-id').value = '';
-  ['mc-nome','mc-empresa','mc-email','mc-whatsapp'].forEach(id => document.getElementById(id).value='');
+  ['mc-nome','mc-empresa','mc-email','mc-whatsapp','mc-slug'].forEach(id => document.getElementById(id).value='');
   document.getElementById('mc-btn-del').style.display = 'none';
+  document.getElementById('mc-link-wrap').style.display = 'none';
   abrir('modal-cliente');
 }
 
@@ -734,6 +747,14 @@ async function editarCliente(id) {
   document.getElementById('mc-empresa').value = c.empresa||'';
   document.getElementById('mc-email').value = c.email||'';
   document.getElementById('mc-whatsapp').value = c.whatsapp||'';
+  document.getElementById('mc-slug').value = c.slug||'';
+  if(c.slug) {
+    const link = `${HOST}/c/${c.slug}`;
+    document.getElementById('mc-link').value = link;
+    document.getElementById('mc-link-wrap').style.display = '';
+  } else {
+    document.getElementById('mc-link-wrap').style.display = 'none';
+  }
   document.getElementById('mc-btn-del').style.display = 'inline-flex';
   abrir('modal-cliente');
 }
@@ -744,16 +765,24 @@ async function salvarCliente() {
     nome: document.getElementById('mc-nome').value.trim(),
     empresa: document.getElementById('mc-empresa').value.trim(),
     email: document.getElementById('mc-email').value.trim(),
-    whatsapp: document.getElementById('mc-whatsapp').value.trim()
+    whatsapp: document.getElementById('mc-whatsapp').value.trim(),
+    slug: document.getElementById('mc-slug').value.trim() || undefined
   };
   if(!body.nome) return toast('Nome é obrigatório', false);
   const url = id ? `/api/clientes/${id}` : '/api/clientes';
   const method = id ? 'PUT' : 'POST';
-  await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const data = await res.json();
+  if(!res.ok) return toast(data.erro||'Erro ao salvar', false);
   fechar('modal-cliente');
   toast(id ? 'Cliente atualizado' : 'Cliente criado');
   carregarClientes();
   carregarOpcoesClientes();
+}
+
+function copiarLink() {
+  const val = document.getElementById('mc-link').value;
+  navigator.clipboard.writeText(val).then(() => toast('Link copiado!'));
 }
 
 async function deletarCliente() {
