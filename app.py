@@ -1093,6 +1093,7 @@ def portal_cliente_lista(slug):
             if not session.get(chave_sessao):
                 return render_template("portal/pin.html",
                     token=slug,
+                    form_action=f"/c/{slug}",
                     cliente_nome=cliente.get("nome") or "",
                     logo_url=cliente.get("logo_url") or "",
                     erro=erro_pin
