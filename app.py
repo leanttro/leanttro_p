@@ -1239,7 +1239,7 @@ def _creds_prontas(cliente_id):
     return _refresh_creds(cliente_id, creds)
 
 
-def _oauth_flow(scopes, state=None):
+def _oauth_flow(scopes, state=None, code_verifier=None):
     """Cria um Flow OAuth com as configurações do app.
     A redirect URI vem de GOOGLE_REDIRECT_URI no .env (variável GOOGLE_REDIRECT).
     """
@@ -1256,8 +1256,11 @@ def _oauth_flow(scopes, state=None):
     if state:
         kwargs["state"] = state
     flow = Flow.from_client_config(config, **kwargs)
-    # Desabilita PKCE (code_verifier) — necessário para apps web server-side
-    flow.code_verifier = None
+    # Propaga code_verifier para o callback (evita "Missing code verifier")
+    if code_verifier is not None:
+        flow.code_verifier = code_verifier
+    else:
+        flow.code_verifier = None  # desabilita PKCE se nao houver verifier
     return flow
 
 
@@ -1629,9 +1632,10 @@ def metricas_oauth_start(cliente_slug):
         prompt="consent",  # garante que refresh_token seja sempre retornado
     )
 
-    session["metricas_oauth_state"]  = state
-    session["metricas_oauth_slug"]   = cliente_slug
-    session["metricas_oauth_scopes"] = scopes
+    session["metricas_oauth_state"]      = state
+    session["metricas_oauth_slug"]       = cliente_slug
+    session["metricas_oauth_scopes"]     = scopes
+    session["metricas_oauth_cv"]         = flow.code_verifier  # salva para o callback
 
     return redirect(auth_url)
 
@@ -1667,7 +1671,8 @@ def metricas_oauth_callback():
         abort(404)
 
     try:
-        flow = _oauth_flow(scopes, state=state)
+        code_verifier = session.get("metricas_oauth_cv")
+        flow = _oauth_flow(scopes, state=state, code_verifier=code_verifier)
         flow.fetch_token(code=code)
         _save_creds(cliente["id"], flow.credentials)
     except Exception as e:
@@ -1678,7 +1683,7 @@ def metricas_oauth_callback():
         ), 500
 
     # Limpa variáveis de sessão do OAuth
-    for k in ("metricas_oauth_state", "metricas_oauth_slug", "metricas_oauth_scopes"):
+    for k in ("metricas_oauth_state", "metricas_oauth_slug", "metricas_oauth_scopes", "metricas_oauth_cv"):
         session.pop(k, None)
 
     return redirect(f"/metricas/{cliente_slug}")
