@@ -1576,16 +1576,18 @@ def api_metricas_ga4(cliente_slug):
         ]
 
         return jsonify({
-            "ok":            True,
-            "sessoes":       sessoes,
-            "usuarios":      usuarios,
-            "pageviews":     pageviews,
-            "bounce_rate":   bounce_rate,
-            "duracao_media": duracao_media,
-            "canais":        canais,
-            "top_paginas":   top_paginas,
-            "serie":         serie,
-            "periodo_dias":  dias,
+            "success":      True,
+            "totais": {
+                "sessoes":      sessoes,
+                "usuarios":     usuarios,
+                "pageviews":    pageviews,
+                "bounce_rate":  bounce_rate,
+                "tempo_medio":  duracao_media,
+            },
+            "canais":       canais,
+            "top_paginas":  top_paginas,
+            "por_dia":      serie,
+            "periodo_dias": dias,
         })
 
     except Exception as e:
