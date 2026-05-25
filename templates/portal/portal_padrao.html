@@ -336,10 +336,14 @@ header{
 .bar-val{font-size:.6rem;color:var(--text3);font-weight:600}
 
 /* ── MÍDIAS ── */
-.midias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.midias-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:600px){.midias-grid{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}}
 .midia-item{border-radius:var(--radius);overflow:hidden;background:var(--surface);border:1px solid var(--border)}
-.midia-item img{width:100%;height:140px;object-fit:cover;border-radius:0}
-.midia-legenda{padding:10px 12px;font-size:.73rem;color:var(--text2);font-weight:500}
+.midia-item img{width:100%;height:auto;max-height:600px;object-fit:contain;border-radius:0;background:#f0efe9}
+.midia-legenda{padding:10px 14px;font-size:.73rem;color:var(--text2);font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.midia-download{display:inline-flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;color:var(--text3);text-decoration:none;padding:4px 8px;border-radius:5px;border:1px solid var(--border);transition:.15s}
+.midia-download:hover{color:var(--text);background:var(--surface2)}
+.midia-download svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
 
 /* ── LINKS ── */
 .links-list{display:flex;flex-direction:column;gap:8px}
@@ -867,7 +871,13 @@ footer{
         {% for m in midias %}
         <div class="midia-item">
           <img src="{{ m.url }}" alt="{{ m.legenda or 'Imagem' }}" loading="lazy">
-          {% if m.legenda %}<div class="midia-legenda">{{ m.legenda }}</div>{% endif %}
+          <div class="midia-legenda">
+            <span>{{ m.legenda or '' }}</span>
+            <a href="{{ m.url }}" download target="_blank" class="midia-download">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar
+            </a>
+          </div>
         </div>
         {% endfor %}
       </div>
