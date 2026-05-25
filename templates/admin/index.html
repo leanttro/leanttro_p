@@ -339,6 +339,9 @@ tr:hover td{background:#fafaf8}
         <div class="card-head">
           <h2>Propostas & Projetos</h2>
           <div class="right">
+            <select class="card-search" id="filtro-cliente-propostas" onchange="filtrarPropostasCliente()" style="width:180px">
+              <option value="">Todos os clientes</option>
+            </select>
             <input class="card-search" id="busca-propostas" placeholder="Buscar..." oninput="filtrarTabela('tb-propostas',this.value)">
           </div>
         </div>
@@ -717,6 +720,30 @@ tr:hover td{background:#fafaf8}
 </div>
 </div>
 
+<!-- ═══════════════════ MODAL DUPLICAR ═══════════════════ -->
+<div class="overlay" id="modal-duplicar">
+<div class="modal" style="max-width:420px">
+  <div class="modal-head">
+    <h3>Duplicar proposta</h3>
+    <button class="x-btn" onclick="fechar('modal-duplicar')">✕</button>
+  </div>
+  <div class="modal-body">
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:16px">Escolha para qual cliente a cópia será criada. O status será redefinido para <strong>Rascunho</strong>.</p>
+    <div class="field">
+      <label>Cliente *</label>
+      <select id="dup-cliente"><option value="">Selecione...</option></select>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-secondary" onclick="fechar('modal-duplicar')">Cancelar</button>
+    <button class="btn btn-primary" id="dup-btn-confirmar" onclick="confirmarDuplicar()">
+      <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Duplicar
+    </button>
+  </div>
+</div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -936,7 +963,7 @@ async function carregarPropostas() {
   const tb = document.getElementById('tb-propostas');
   if(!ps.length) { tb.innerHTML=`<tr><td colspan="6"><div class="empty"><p>Nenhuma proposta ainda.</p></div></td></tr>`; return }
   tb.innerHTML = ps.map(p=>`
-    <tr>
+    <tr data-cliente-id="${p.cliente_id}">
       <td><strong>${p.titulo}</strong></td>
       <td>${p.cliente_nome}${p.cliente_empresa?` <span class="td-muted">· ${p.cliente_empresa}</span>`:''}</td>
       <td><span class="badge badge-${p.status}">${(p.status||'').replace('_',' ')}</span></td>
@@ -948,6 +975,19 @@ async function carregarPropostas() {
         ${p.cliente_whatsapp ? `<a href="https://wa.me/55${p.cliente_whatsapp.replace(/\D/g,'')}?text=Ol%C3%A1+${encodeURIComponent(p.cliente_nome)}%21+Segue+o+link+da+sua+proposta%3A+${HOST}/p/${p.slug||p.token}" target="_blank" class="btn btn-success btn-xs">WhatsApp</a>` : ''}
       </div></td>
     </tr>`).join('');
+  // Popula filtro de clientes (únicos)
+  const filtro = document.getElementById('filtro-cliente-propostas');
+  const valorAtual = filtro.value;
+  const vistos = new Set();
+  const opts = ['<option value="">Todos os clientes</option>'];
+  ps.forEach(p => {
+    if(!vistos.has(p.cliente_id)) {
+      vistos.add(p.cliente_id);
+      opts.push(`<option value="${p.cliente_id}">${p.cliente_nome}${p.cliente_empresa?' — '+p.cliente_empresa:''}</option>`);
+    }
+  });
+  filtro.innerHTML = opts.join('');
+  if(valorAtual) { filtro.value = valorAtual; filtrarPropostasCliente(); }
 }
 
 async function novaProposta() {
@@ -1090,12 +1130,41 @@ async function deletarProposta() {
 }
 
 async function duplicarProposta() {
-  const r = await fetch(`/api/propostas/${_pid}/duplicar`, {method:'POST'});
-  const d = await r.json();
-  fechar('modal-proposta');
-  toast('Proposta duplicada!');
-  carregarPropostas();
-  await editarProposta(d.id);
+  // Preenche select de clientes no modal de duplicar
+  const cs = await fetch('/api/clientes').then(r=>r.json());
+  const sel = document.getElementById('dup-cliente');
+  const clienteAtual = document.getElementById('mp-cliente').value;
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    cs.map(c=>`<option value="${c.id}" ${c.id==clienteAtual?'selected':''}>${c.nome}${c.empresa?' — '+c.empresa:''}</option>`).join('');
+  abrir('modal-duplicar');
+}
+
+async function confirmarDuplicar() {
+  const clienteId = document.getElementById('dup-cliente').value;
+  if(!clienteId) { toast('Selecione um cliente', false); return; }
+  const btn = document.getElementById('dup-btn-confirmar');
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/propostas/${_pid}/duplicar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cliente_id: clienteId})});
+    const d = await r.json();
+    fechar('modal-duplicar');
+    fechar('modal-proposta');
+    toast('Proposta duplicada!');
+    carregarPropostas();
+    await editarProposta(d.id);
+  } catch(e) {
+    toast('Erro ao duplicar', false);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function filtrarPropostasCliente() {
+  const clienteId = document.getElementById('filtro-cliente-propostas').value;
+  document.querySelectorAll('#tb-propostas tr').forEach(tr => {
+    if(!clienteId) { tr.style.display = ''; return; }
+    tr.style.display = tr.dataset.clienteId === clienteId ? '' : 'none';
+  });
 }
 
 function copiarLink() {
