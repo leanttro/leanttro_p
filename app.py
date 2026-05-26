@@ -1124,7 +1124,7 @@ def portal_cliente(token):
         "SELECT * FROM indicacoes WHERE client_id=%s ORDER BY criado_em DESC",
         (cliente_id,)
     ) or []
-    indica_link = request.host_url.rstrip('/') + '/indicar-amigo?ref=' + (p.get('cliente_slug') or str(cliente_id))
+    indica_link = request.host_url.rstrip('/') + '/indicar/' + (p.get('cliente_slug') or str(cliente_id))
 
     return render_template(template_path,
         proposta=dict(p),
@@ -1214,9 +1214,16 @@ def portal_cliente_lista(slug):
         for k, v in p.items():
             if hasattr(v, 'isoformat'):
                 p[k] = v.isoformat()
+    indica_link = request.host_url.rstrip('/') + '/indicar-amigo?ref=' + (cliente.get('slug') or str(cliente['id']))
+    indicacoes = query2(
+        "SELECT * FROM indicacoes WHERE client_id=%s ORDER BY criado_em DESC",
+        (cliente['id'],)
+    ) or []
     return render_template("portal/portal_cliente.html",
         cliente=dict(cliente),
-        propostas=propostas
+        propostas=propostas,
+        indica_link=indica_link,
+        indicacoes=[dict(i) for i in indicacoes],
     )
 
 @app.route("/c/<slug>/<token>")
