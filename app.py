@@ -123,16 +123,10 @@ def close_db(e=None):
 
 def get_db2():
     if "db2" not in g:
-        database_url2 = os.getenv("DATABASE_URL_2")
-        if not database_url2:
-            raise RuntimeError(
-                "DATABASE_URL_2 nao configurada. "
-                "Defina a variavel de ambiente DATABASE_URL_2 antes de iniciar o servidor."
-            )
-        g.db2 = psycopg2.connect(
-            dsn=database_url2,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
+        url2 = os.getenv("DATABASE_URL_2")
+        if not url2:
+            raise RuntimeError("DATABASE_URL_2 nao configurada.")
+        g.db2 = psycopg2.connect(dsn=url2, cursor_factory=psycopg2.extras.RealDictCursor)
     return g.db2
 
 def query2(sql, params=(), one=False, commit=False):
@@ -1256,17 +1250,12 @@ def lp_indicar_amigo():
 @app.route("/admin/indicacoes")
 @login_required
 def admin_indicacoes_listar():
-    rows = query2("""
-        SELECT i.*, i.client_id as indicado_por_id
-        FROM indicacoes i
-        ORDER BY i.criado_em DESC
-    """) or []
-    # Busca nomes dos clientes no banco principal
+    rows = query2("SELECT * FROM indicacoes ORDER BY criado_em DESC") or []
     result = []
     for r in rows:
         row = dict(r)
         c = query("SELECT nome, slug FROM clientes WHERE id=%s", (row.get("client_id"),), one=True)
-        row["indicado_por_nome"] = c["nome"] if c else None
+        row["indicado_por_nome"] = c["nome"] if c else "—"
         row["cliente_slug"] = c["slug"] if c else None
         result.append(row)
     return jsonify({"indicacoes": result})
