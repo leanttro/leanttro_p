@@ -335,7 +335,10 @@ footer a:hover{color:var(--accent)}
             {% for ind in indicacoes %}
             <div class="indica-item">
               <span class="indica-item-nome">{{ ind.nome_indicado }}</span>
-              <div style="display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                {% if ind.valor_projeto and ind.valor_projeto > 0 %}
+                <span style="font-size:.72rem;color:var(--text2)">Proj: R$ {{ "%.0f"|format(ind.valor_projeto|float) }}</span>
+                {% endif %}
                 {% if ind.credito_liberado and ind.credito_liberado > 0 %}
                 <span class="indica-credito">R$ {{ ind.credito_liberado|int }} crédito</span>
                 {% endif %}
