@@ -75,57 +75,62 @@ header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top
 .filter-tab:hover{border-color:rgba(121,67,226,.35);color:var(--primary)}
 .filter-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
 
-/* ── PRODUTOS GRID ────────────────────────────────── */
+/* ── PRODUTOS LISTA ACCORDION ──────────────────────── */
 .produtos-section{padding:40px 20px 80px;background:var(--bg)}
 .produtos-inner{max-width:960px;margin:0 auto}
-.produtos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-@media(max-width:840px){.produtos-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:540px){.produtos-grid{grid-template-columns:1fr}}
 
-/* Card */
-.produto-card{
-  background:#fff;border:1.5px solid var(--border);border-radius:16px;
-  padding:28px 24px;display:flex;flex-direction:column;gap:0;
-  transition:border-color .2s,box-shadow .2s,transform .2s;
-  position:relative;overflow:hidden;
+.lista-section{display:flex;flex-direction:column;gap:28px}
+.lista-grupo-label{
+  font-size:.68rem;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--primary);margin-bottom:10px;padding-left:2px;
+  font-family:var(--display);
 }
-.produto-card:hover{border-color:rgba(121,67,226,.35);box-shadow:var(--shadow-md);transform:translateY(-2px)}
-.produto-card.destaque{border-color:var(--primary)}
-.produto-card.destaque::before{
-  content:'Mais popular';position:absolute;top:16px;right:-28px;
-  background:var(--accent);color:#0a0a0f;font-size:.65rem;font-weight:800;
-  letter-spacing:.5px;text-transform:uppercase;padding:4px 36px;
-  transform:rotate(45deg);transform-origin:center;
+.lista-grupo{border:1.5px solid var(--border);border-radius:16px;overflow:hidden;background:#fff}
+
+.produto-item{border-bottom:1px solid var(--border);overflow:hidden;transition:background .15s}
+.produto-item:last-child{border-bottom:none}
+.produto-item:hover{background:var(--bg2)}
+.produto-item.open{background:#fff}
+
+.item-header{
+  display:flex;align-items:center;gap:14px;
+  padding:15px 20px;cursor:pointer;user-select:none;
 }
-
-.card-categoria{font-size:.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--primary);margin-bottom:10px}
-.card-nome{font-family:var(--display);font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:8px;line-height:1.3}
-.card-desc{font-size:.84rem;color:var(--muted);line-height:1.6;margin-bottom:20px;flex:1}
-
-.card-preco{margin-top:auto}
-.preco-label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.preco-valor{font-family:var(--display);font-weight:800;color:var(--primary);line-height:1.1;margin-bottom:2px}
-.preco-valor .cifrao{font-size:1rem;vertical-align:top;margin-top:4px;display:inline-block}
-.preco-valor .numero{font-size:2rem}
-.preco-valor .centavos{font-size:1rem;vertical-align:top;margin-top:4px;display:inline-block}
-.preco-recorrente{font-size:.75rem;color:var(--muted);margin-top:4px}
-.preco-setup{font-size:.75rem;color:var(--muted);margin-top:2px}
-.preco-unico-label{font-size:.75rem;color:var(--muted);margin-top:4px}
-
-.card-cta{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  margin-top:18px;width:100%;padding:11px 16px;
-  border-radius:10px;background:var(--primary-l);color:var(--primary);
-  font-size:.85rem;font-weight:700;font-family:var(--sans);
-  border:1.5px solid rgba(121,67,226,.2);transition:all .2s;cursor:pointer;
+.item-nome{font-family:var(--display);font-size:.9rem;font-weight:700;color:var(--text);flex:1;min-width:0;line-height:1.3}
+.item-cat{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--primary);background:var(--primary-l);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.item-valor{font-family:var(--display);font-size:.88rem;font-weight:800;color:var(--primary);white-space:nowrap;flex-shrink:0}
+.item-valor.sob{color:var(--muted);font-weight:600;font-size:.82rem}
+.item-arrow{
+  width:26px;height:26px;border-radius:50%;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .25s,background .2s;border:1.5px solid var(--border);
 }
-.card-cta:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-.card-cta svg{width:14px;height:14px;flex-shrink:0}
+.item-arrow svg{width:12px;height:12px;stroke:var(--muted);fill:none;stroke-width:2.5}
+.produto-item.open .item-arrow{transform:rotate(180deg);background:var(--primary);border-color:var(--primary)}
+.produto-item.open .item-arrow svg{stroke:#fff}
 
-.preco-consulta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.consulta-icone{font-size:1.3rem;line-height:1}
-.consulta-texto{font-family:var(--display);font-size:1.1rem;font-weight:800;color:var(--muted)}
-.preco-consulta-sub{font-size:.75rem;color:var(--muted);line-height:1.4}
+.item-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .3s ease,padding .3s ease;
+  padding:0 20px;border-top:0px solid var(--border);
+}
+.produto-item.open .item-body{
+  max-height:400px;
+  padding:14px 20px 20px;
+  border-top:1px solid var(--border);
+}
+.item-desc{font-size:.84rem;color:var(--muted);line-height:1.65;margin-bottom:14px}
+.item-preco-detalhe{font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.item-preco-detalhe strong{color:var(--text)}
+.item-cta{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 16px;border-radius:10px;
+  background:#25D366;color:#fff;
+  font-size:.8rem;font-weight:700;font-family:var(--display);
+  transition:background .2s,transform .15s;margin-top:6px;
+}
+.item-cta:hover{background:#1da850;transform:translateY(-1px)}
+.item-cta svg{width:14px;height:14px;flex-shrink:0;fill:#fff}
 
 /* ── LOADING / EMPTY / ERROR ───────────────────────── */
 .state-box{text-align:center;padding:80px 20px;color:var(--muted)}
@@ -238,7 +243,7 @@ footer{background:var(--dark);padding:40px 20px 20px}
         <div class="icon">⚠️</div>
         <p><strong>Erro ao carregar</strong>Não foi possível buscar os preços. Tente novamente ou fale com a gente.</p>
       </div>
-      <div class="produtos-grid" id="produtosGrid" style="display:none"></div>
+      <div class="lista-section" id="produtosGrid" style="display:none"></div>
     </div>
   </div>
 </section>
@@ -309,96 +314,76 @@ footer{background:var(--dark);padding:40px 20px 20px}
 <script>
 (function () {
 
-  // ── Formata preço conforme preco_json (mesma lógica do portal) ──────────
-  function formatPrecoJson(prod) {
-    // Tenta pegar preco_json (pode vir como string ou objeto)
-    let pj = prod.preco_json;
-    if (typeof pj === 'string') {
-      try { pj = JSON.parse(pj); } catch(e) { pj = null; }
-    }
-
-    // Modelo setup + mensal
-    if (pj && (pj.setup != null || pj.mensal != null)) {
-      const setup  = parseFloat(pj.setup  || 0);
-      const mensal = parseFloat(pj.mensal || 0);
-      return { tipo: 'recorrente', setup, mensal };
-    }
-
-    // Modelo único
-    if (pj && pj.unico != null) {
-      return { tipo: 'unico', valor: parseFloat(pj.unico || 0) };
-    }
-
-    // Fallback: usa campo valor_unit / preco direto
-    const val = parseFloat(prod.valor_unit || prod.preco || prod.valor || 0);
-    const recorrente = prod.recorrente === true || prod.recorrente === 'true';
-    if (recorrente) {
-      return { tipo: 'recorrente', setup: 0, mensal: val };
-    }
-    return { tipo: 'unico', valor: val };
-  }
+  const WPP = '5511913324827';
+  const wppSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+  const arrowSvg = `<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`;
 
   function formatBRL(n) {
-    return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return 'R$ ' + parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function formatPrecoJson(prod) {
+    let pj = prod.preco_json;
+    if (typeof pj === 'string') { try { pj = JSON.parse(pj); } catch(e) { pj = null; } }
+    if (pj && (pj.setup != null || pj.mensal != null)) {
+      return { tipo: 'recorrente', setup: parseFloat(pj.setup||0), mensal: parseFloat(pj.mensal||0) };
+    }
+    if (pj && pj.unico != null) return { tipo: 'unico', valor: parseFloat(pj.unico||0) };
+    const val = parseFloat(prod.valor_unit || prod.preco || prod.valor || 0);
+    const rec  = prod.recorrente === true || prod.recorrente === 'true';
+    return rec ? { tipo: 'recorrente', setup: 0, mensal: val } : { tipo: 'unico', valor: val };
   }
 
   function temValor(preco) {
-    if (preco.tipo === 'recorrente') return preco.mensal > 0;
-    return preco.valor > 0;
+    return preco.tipo === 'recorrente' ? preco.mensal > 0 : preco.valor > 0;
   }
 
-  function renderPreco(preco) {
-    if (!temValor(preco)) {
-      return `
-        <div class="preco-consulta">
-          <span class="consulta-icone">💬</span>
-          <span class="consulta-texto">Sob consulta</span>
-        </div>
-        <div class="preco-consulta-sub">Entre em contato para um orçamento personalizado</div>`;
-    }
+  function valorCurto(preco) {
+    if (!temValor(preco)) return null;
+    if (preco.tipo === 'recorrente') return formatBRL(preco.mensal) + '/mês';
+    return formatBRL(preco.valor);
+  }
+
+  function detalhePreco(preco) {
+    if (!temValor(preco)) return '';
     if (preco.tipo === 'recorrente') {
-      const parts = formatBRL(preco.mensal).split(',');
-      let html = `
-        <div class="preco-label">A partir de</div>
-        <div class="preco-valor">
-          <span class="cifrao">R$</span><span class="numero">${parts[0].replace('R$','').trim()}</span><span class="centavos">,${parts[1]}</span>
-        </div>
-        <div class="preco-recorrente">por mês</div>`;
-      if (preco.setup > 0) {
-        html += `<div class="preco-setup">+ R$ ${formatBRL(preco.setup)} de setup</div>`;
-      }
-      return html;
-    } else {
-      const parts = formatBRL(preco.valor).split(',');
-      return `
-        <div class="preco-label">Investimento</div>
-        <div class="preco-valor">
-          <span class="cifrao">R$</span><span class="numero">${parts[0].replace('R$','').trim()}</span><span class="centavos">,${parts[1]}</span>
-        </div>
-        <div class="preco-unico-label">pagamento único</div>`;
+      let txt = `<div class="item-preco-detalhe"><strong>${formatBRL(preco.mensal)}/mês</strong></div>`;
+      if (preco.setup > 0) txt += `<div class="item-preco-detalhe">+ ${formatBRL(preco.setup)} de setup</div>`;
+      return txt;
     }
+    return `<div class="item-preco-detalhe"><strong>${formatBRL(preco.valor)}</strong> — pagamento único</div>`;
   }
 
-  function renderCard(prod, idx) {
+  function toggleItem(el) {
+    el.closest('.produto-item').classList.toggle('open');
+  }
+  window.toggleItem = toggleItem;
+
+  function renderItem(prod) {
     const preco = formatPrecoJson(prod);
-    const cat   = (prod.categoria || prod.category || '').trim();
     const nome  = prod.nome || prod.name || prod.titulo || '—';
     const desc  = prod.descricao || prod.description || '';
-    const destaque = prod.destaque === true || prod.destaque === 'true' || prod.popular === true;
+    const cat   = (prod.categoria || prod.category || '').trim();
+    const val   = valorCurto(preco);
+    const isSob = !val;
     const wppMsg = encodeURIComponent(`Olá! Tenho interesse no serviço: ${nome}`);
-    const ctaLabel = temValor(preco) ? 'Quero este serviço' : 'Pedir orçamento';
+    const ctaLabel = isSob ? 'Pedir orçamento' : 'Quero este serviço';
 
-    return `
-      <div class="produto-card${destaque ? ' destaque' : ''}" data-cat="${cat.toLowerCase()}">
-        ${cat ? `<div class="card-categoria">${cat}</div>` : ''}
-        <div class="card-nome">${nome}</div>
-        <div class="card-desc">${desc}</div>
-        <div class="card-preco">${renderPreco(preco)}</div>
-        <a href="https://wa.me/5511913324827?text=${wppMsg}" class="card-cta" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          ${ctaLabel}
+    return `<div class="produto-item">
+      <div class="item-header" onclick="toggleItem(this)">
+        <div class="item-nome">${nome}</div>
+        ${cat ? `<span class="item-cat">${cat}</span>` : ''}
+        <div class="item-valor${isSob?' sob':''}">${isSob ? 'Sob consulta' : val}</div>
+        <div class="item-arrow">${arrowSvg}</div>
+      </div>
+      <div class="item-body">
+        ${desc ? `<div class="item-desc">${desc}</div>` : ''}
+        ${!isSob ? detalhePreco(preco) : ''}
+        <a href="https://wa.me/${WPP}?text=${wppMsg}" class="item-cta" target="_blank" rel="noopener">
+          ${wppSvg} ${ctaLabel}
         </a>
-      </div>`;
+      </div>
+    </div>`;
   }
 
   // ── Estado ────────────────────────────────────────────────────────────
@@ -411,24 +396,49 @@ footer{background:var(--dark);padding:40px 20px 20px}
   const gridEl    = document.getElementById('produtosGrid');
   const tabsEl    = document.getElementById('filterTabs');
 
+  function renderGrupos(prods) {
+    // Separa por tipo: loja = produtos, portfolio = portfólio, resto = outros
+    const loja      = prods.filter(p => p.tipo === 'loja');
+    const portfolio = prods.filter(p => p.tipo === 'portfolio');
+    const outros    = prods.filter(p => p.tipo !== 'loja' && p.tipo !== 'portfolio');
+
+    let html = '';
+    if (loja.length) {
+      html += `<div>
+        <div class="lista-grupo-label">Produtos &amp; Acesso</div>
+        <div class="lista-grupo">${loja.map(renderItem).join('')}</div>
+      </div>`;
+    }
+    if (portfolio.length) {
+      html += `<div>
+        <div class="lista-grupo-label">Portfólio &amp; Projetos</div>
+        <div class="lista-grupo">${portfolio.map(renderItem).join('')}</div>
+      </div>`;
+    }
+    if (outros.length) {
+      html += `<div>
+        <div class="lista-grupo-label">Outros Serviços</div>
+        <div class="lista-grupo">${outros.map(renderItem).join('')}</div>
+      </div>`;
+    }
+    return html;
+  }
+
   function mostrarGrid(prods) {
     loadingEl.style.display = 'none';
     errorEl.style.display   = 'none';
-
     if (!prods || prods.length === 0) {
-      gridEl.style.display   = 'none';
-      emptyEl.style.display  = 'block';
+      gridEl.style.display  = 'none';
+      emptyEl.style.display = 'block';
       return;
     }
-
-    emptyEl.style.display  = 'none';
-    gridEl.style.display   = 'grid';
-    gridEl.innerHTML       = prods.map((p, i) => renderCard(p, i)).join('');
+    emptyEl.style.display = 'none';
+    gridEl.style.display  = 'flex';
+    gridEl.innerHTML      = renderGrupos(prods);
   }
 
   function filtrar(cat) {
     catAtiva = cat;
-    // Atualiza tabs
     tabsEl.querySelectorAll('.filter-tab').forEach(t => {
       t.classList.toggle('active', t.dataset.cat === cat);
     });
@@ -442,12 +452,10 @@ footer{background:var(--dark);padding:40px 20px 20px}
     const cats = [...new Set(
       produtos.map(p => (p.categoria || p.category || '').trim()).filter(Boolean)
     )];
-    // Limpa tabs extras (mantém "Todos")
-    const existentes = tabsEl.querySelectorAll('.filter-tab[data-cat]:not([data-cat="todos"])');
-    existentes.forEach(e => e.remove());
+    tabsEl.querySelectorAll('.filter-tab[data-cat]:not([data-cat="todos"])').forEach(e => e.remove());
     cats.forEach(cat => {
       const btn = document.createElement('button');
-      btn.className  = 'filter-tab';
+      btn.className   = 'filter-tab';
       btn.dataset.cat = cat.toLowerCase();
       btn.textContent = cat;
       btn.addEventListener('click', () => filtrar(cat.toLowerCase()));
@@ -455,26 +463,19 @@ footer{background:var(--dark);padding:40px 20px 20px}
     });
   }
 
-  // Tab "Todos"
   tabsEl.querySelector('[data-cat="todos"]').addEventListener('click', () => filtrar('todos'));
 
-  // ── Fetch produtos ────────────────────────────────────────────────────
   async function carregarProdutos() {
     try {
-      const res = await fetch('https://leanttro.com/api/produtos', {
-        headers: { 'Accept': 'application/json' }
-      });
+      const res = await fetch('https://leanttro.com/api/produtos', { headers: { 'Accept': 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-
-      // API pode retornar array direto ou { produtos: [...] }
       const lista = Array.isArray(data) ? data : (data.produtos || data.items || []);
       todosOsProdutos = lista;
-
       injetarFiltros(lista);
       filtrar('todos');
     } catch (err) {
-      console.error('[lp_precos] Erro ao buscar produtos:', err);
+      console.error('[lp_precos] Erro:', err);
       loadingEl.style.display = 'none';
       errorEl.style.display   = 'block';
     }
