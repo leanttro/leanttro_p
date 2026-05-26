@@ -1644,7 +1644,7 @@ const STATUS_INDICA = ['pendente','ganho','perdido'];
 async function carregarIndicacoes() {
   const tbody = document.getElementById('lista-indicacoes');
   try {
-    const r = await fetch('/admin/indicacoes', {headers:{Authorization:'Bearer '+TOKEN}});
+    const r = await fetch('/admin/indicacoes');
     const data = await r.json();
     const lista = data.indicacoes || [];
     if (!lista.length) {
@@ -1672,7 +1672,7 @@ async function atualizarIndicacao(id, status) {
   try {
     const r = await fetch(`/admin/indicacoes/${id}`, {
       method:'PUT',
-      headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({status})
     });
     if (r.ok) toast('Status atualizado!');
