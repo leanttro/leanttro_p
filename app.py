@@ -1204,6 +1204,76 @@ def portal_cliente_redirecionar(slug, token):
     return redirect(f"/p/{token}")
 
 # ═══════════════════════════════════════════════════════════
+#  LANDING PAGES PÚBLICAS
+# ═══════════════════════════════════════════════════════════
+
+@app.route("/precos")
+def lp_precos():
+    return render_template("lp_precos.html")
+
+@app.route("/indicar-amigo")
+def lp_indicar_amigo():
+    slug = request.args.get("ref", "")
+    return render_template("lp_indicacao.html", slug=slug)
+
+# ═══════════════════════════════════════════════════════════
+#  ADMIN  INDICAÇÕES
+# ═══════════════════════════════════════════════════════════
+
+@app.route("/admin/indicacoes")
+@login_required
+def admin_indicacoes_listar():
+    rows = query("""
+        SELECT i.*, c.nome as indicado_por_nome, c.slug as cliente_slug
+        FROM indicacoes i
+        LEFT JOIN clientes c ON c.id = i.client_id
+        ORDER BY i.criado_em DESC
+    """) or []
+    return jsonify({"indicacoes": [dict(r) for r in rows]})
+
+@app.route("/admin/indicacoes/<int:iid>", methods=["PUT"])
+@login_required
+def admin_indicacao_atualizar(iid):
+    d = request.json or {}
+    status = d.get("status")
+    premio = d.get("premio_liberado")
+    sets, vals = [], []
+    if status:
+        sets.append("status=%s"); vals.append(status)
+    if premio is not None:
+        sets.append("premio_liberado=%s"); vals.append(bool(premio))
+    if not sets:
+        return jsonify({"ok": False}), 400
+    vals.append(iid)
+    query(f"UPDATE indicacoes SET {', '.join(sets)} WHERE id=%s", vals, commit=True)
+    return jsonify({"ok": True})
+
+# ═══════════════════════════════════════════════════════════
+#  API PÚBLICA  PRODUTOS
+# ═══════════════════════════════════════════════════════════
+
+@app.route("/api/produtos")
+def api_produtos_publico():
+    """Retorna produtos/serviços cadastrados — usado pela lp_precos.html"""
+    rows = query("""
+        SELECT id, nome, descricao, categoria, valor_unit, recorrente, periodo,
+               destaque, preco_json
+        FROM produtos
+        ORDER BY destaque DESC NULLS LAST, categoria, nome
+    """) or []
+    produtos = []
+    for r in rows:
+        p = dict(r)
+        # Garante que preco_json é dict (pode vir como string do postgres)
+        if p.get("preco_json") and isinstance(p["preco_json"], str):
+            try:
+                p["preco_json"] = json.loads(p["preco_json"])
+            except Exception:
+                p["preco_json"] = {}
+        produtos.append(p)
+    return jsonify(produtos)
+
+# ═══════════════════════════════════════════════════════════
 #  ROTA RAIZ
 # ═══════════════════════════════════════════════════════════
 
@@ -1678,40 +1748,6 @@ def api_metricas_ia_analise(cliente_slug):
     if erro:
         return jsonify({"erro": erro}), 500
     return jsonify({"analise": texto})
-
-
-# ═══════════════════════════════════════════════════════════
-#  ADMIN  INDICAÇÕES
-# ═══════════════════════════════════════════════════════════
-
-@app.route("/admin/indicacoes")
-@login_required
-def admin_indicacoes_listar():
-    rows = query("""
-        SELECT i.*, c.nome as indicado_por_nome, c.slug as cliente_slug
-        FROM indicacoes i
-        LEFT JOIN clientes c ON c.id = i.client_id
-        ORDER BY i.criado_em DESC
-    """) or []
-    return jsonify({"indicacoes": [dict(r) for r in rows]})
-
-
-@app.route("/admin/indicacoes/<int:iid>", methods=["PUT"])
-@login_required
-def admin_indicacao_atualizar(iid):
-    d = request.json or {}
-    status = d.get("status")
-    premio = d.get("premio_liberado")
-    sets, vals = [], []
-    if status:
-        sets.append("status=%s"); vals.append(status)
-    if premio is not None:
-        sets.append("premio_liberado=%s"); vals.append(bool(premio))
-    if not sets:
-        return jsonify({"ok": False}), 400
-    vals.append(iid)
-    query(f"UPDATE indicacoes SET {', '.join(sets)} WHERE id=%s", vals, commit=True)
-    return jsonify({"ok": True})
 
 
 # ── OAuth Iniciar ───────────────────────────────────────────────────────
