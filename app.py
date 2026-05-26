@@ -90,6 +90,20 @@ def get_db():
         )
     return g.db
 
+def get_db2():
+    if "db2" not in g:
+        database_url2 = os.getenv("DATABASE_URL_2")
+        if not database_url2:
+            raise RuntimeError(
+                "DATABASE_URL_2 nao configurada. "
+                "Defina a variavel de ambiente DATABASE_URL_2 antes de iniciar o servidor."
+            )
+        g.db2 = psycopg2.connect(
+            dsn=database_url2,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    return g.db2
+
 def _ensure_metricas_columns():
     """Garante que as colunas do módulo de métricas existem no banco."""
     try:
