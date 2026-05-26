@@ -1124,7 +1124,7 @@ def portal_cliente(token):
         "SELECT * FROM indicacoes WHERE client_id=%s ORDER BY criado_em DESC",
         (cliente_id,)
     ) or []
-    indica_link = request.host_url.rstrip('/') + '/indicar/' + (p.get('cliente_slug') or str(cliente_id))
+    indica_link = request.host_url.rstrip('/') + '/indicar-amigo?ref=' + (p.get('cliente_slug') or str(cliente_id))
 
     return render_template(template_path,
         proposta=dict(p),
@@ -1271,18 +1271,28 @@ def admin_indicacoes_listar():
 @login_required
 def admin_indicacao_atualizar(iid):
     d = request.json or {}
-    status = d.get("status")
-    premio = d.get("premio_liberado")
+    status        = d.get("status")
+    premio        = d.get("premio_liberado")
+    valor_projeto = d.get("valor_projeto")
     sets, vals = [], []
     if status:
         sets.append("status=%s"); vals.append(status)
+        # Calcula crédito automaticamente ao fechar
+        if status == "fechado" and valor_projeto:
+            vp = float(valor_projeto)
+            credito = 75 if vp <= 1000 else 150
+            sets.append("credito_liberado=%s"); vals.append(credito)
+            sets.append("valor_projeto=%s");   vals.append(vp)
     if premio is not None:
         sets.append("premio_liberado=%s"); vals.append(bool(premio))
+    if valor_projeto and status != "fechado":
+        sets.append("valor_projeto=%s"); vals.append(float(valor_projeto))
     if not sets:
         return jsonify({"ok": False}), 400
     vals.append(iid)
     query2(f"UPDATE indicacoes SET {', '.join(sets)} WHERE id=%s", vals, commit=True)
-    return jsonify({"ok": True})
+    ind = query2("SELECT credito_liberado FROM indicacoes WHERE id=%s", (iid,), one=True)
+    return jsonify({"ok": True, "credito_liberado": float(ind["credito_liberado"]) if ind and ind["credito_liberado"] else 0})
 
 # ═══════════════════════════════════════════════════════════
 #  API PÚBLICA  PRODUTOS
