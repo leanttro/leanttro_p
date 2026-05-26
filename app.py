@@ -1124,7 +1124,7 @@ def portal_cliente(token):
         "SELECT * FROM indicacoes WHERE client_id=%s ORDER BY criado_em DESC",
         (cliente_id,)
     ) or []
-    indica_link = request.host_url.rstrip('/') + '/indicar/' + (p.get('cliente_slug') or str(cliente_id))
+    indica_link = request.host_url.rstrip('/') + '/indicar-amigo?ref=' + (p.get('cliente_slug') or str(cliente_id))
 
     return render_template(template_path,
         proposta=dict(p),
