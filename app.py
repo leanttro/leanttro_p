@@ -18,6 +18,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import psycopg2
 import psycopg2.extras
+from psycopg2 import pool as pg_pool
 import os
 import glob
 import secrets
@@ -118,15 +119,33 @@ def close_db(e=None):
         except: pass
     db2 = g.pop("db2", None)
     if db2:
-        try: db2.close()
+        try:
+            if g.pop("_db2_from_pool", False):
+                _get_pool2().putconn(db2)
+            else:
+                db2.close()
         except: pass
 
-def get_db2():
-    if "db2" not in g:
+_pool2 = None
+
+def _get_pool2():
+    global _pool2
+    if _pool2 is None:
         url2 = os.getenv("DATABASE_URL_2")
         if not url2:
             raise RuntimeError("DATABASE_URL_2 nao configurada.")
-        g.db2 = psycopg2.connect(dsn=url2, cursor_factory=psycopg2.extras.RealDictCursor)
+        _pool2 = pg_pool.ThreadedConnectionPool(
+            minconn=1,
+            maxconn=5,
+            dsn=url2,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    return _pool2
+
+def get_db2():
+    if "db2" not in g:
+        g.db2 = _get_pool2().getconn()
+        g._db2_from_pool = True
     return g.db2
 
 def query2(sql, params=(), one=False, commit=False):
