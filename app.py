@@ -1092,6 +1092,13 @@ def portal_cliente(token):
     if contrato.get("contrato_assinado_em"):
         contrato["contrato_assinado_em"] = contrato["contrato_assinado_em"].isoformat()
 
+    cliente_id = p["cliente_id"]
+    indicacoes = query(
+        "SELECT * FROM indicacoes WHERE client_id=%s ORDER BY criado_em DESC",
+        (cliente_id,)
+    ) or []
+    indica_link = request.host_url.rstrip('/') + '/indicar/' + (p.get('cliente_slug') or str(cliente_id))
+
     return render_template(template_path,
         proposta=dict(p),
         cliente={"nome": p["cliente_nome"], "empresa": p["cliente_empresa"],
@@ -1106,7 +1113,9 @@ def portal_cliente(token):
         metricas=[dict(m) for m in metricas],
         total=total,
         token=p["token"],
-        contrato=contrato
+        contrato=contrato,
+        indicacoes=[dict(i) for i in indicacoes],
+        indica_link=indica_link,
     )
 
 
@@ -1114,6 +1123,23 @@ def portal_cliente(token):
 def portal_cliente_pin(token):
     """Recebe o POST do formulário de PIN e redireciona de volta ao GET."""
     return portal_cliente(token)
+
+
+@app.route("/indicar/<slug>", methods=["POST"])
+def receber_indicacao(slug):
+    cliente = query("SELECT id FROM clientes WHERE slug=%s OR CAST(id AS TEXT)=%s", (slug, slug), one=True)
+    if not cliente:
+        return jsonify({"ok": False, "erro": "Cliente não encontrado"}), 404
+    d = request.json or {}
+    nome = d.get("nome_indicado", "").strip()
+    if not nome:
+        return jsonify({"ok": False, "erro": "Nome obrigatório"}), 400
+    query(
+        "INSERT INTO indicacoes (client_id, nome_indicado, email_indicado, whatsapp_indicado) VALUES (%s,%s,%s,%s)",
+        (cliente["id"], nome, d.get("email_indicado"), d.get("whatsapp_indicado")),
+        commit=True
+    )
+    return jsonify({"ok": True}), 201
 
 # ═══════════════════════════════════════════════════════════
 #  PORTAL DO CLIENTE  por slug
@@ -1652,6 +1678,40 @@ def api_metricas_ia_analise(cliente_slug):
     if erro:
         return jsonify({"erro": erro}), 500
     return jsonify({"analise": texto})
+
+
+# ═══════════════════════════════════════════════════════════
+#  ADMIN  INDICAÇÕES
+# ═══════════════════════════════════════════════════════════
+
+@app.route("/admin/indicacoes")
+@login_required
+def admin_indicacoes_listar():
+    rows = query("""
+        SELECT i.*, c.nome as indicado_por_nome, c.slug as cliente_slug
+        FROM indicacoes i
+        LEFT JOIN clientes c ON c.id = i.client_id
+        ORDER BY i.criado_em DESC
+    """) or []
+    return jsonify({"indicacoes": [dict(r) for r in rows]})
+
+
+@app.route("/admin/indicacoes/<int:iid>", methods=["PUT"])
+@login_required
+def admin_indicacao_atualizar(iid):
+    d = request.json or {}
+    status = d.get("status")
+    premio = d.get("premio_liberado")
+    sets, vals = [], []
+    if status:
+        sets.append("status=%s"); vals.append(status)
+    if premio is not None:
+        sets.append("premio_liberado=%s"); vals.append(bool(premio))
+    if not sets:
+        return jsonify({"ok": False}), 400
+    vals.append(iid)
+    query(f"UPDATE indicacoes SET {', '.join(sets)} WHERE id=%s", vals, commit=True)
+    return jsonify({"ok": True})
 
 
 # ── OAuth Iniciar ───────────────────────────────────────────────────────
