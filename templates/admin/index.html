@@ -249,6 +249,9 @@ tr:hover td{background:#fafaf8}
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Mensagens
       {% if mensagens_novas > 0 %}<span class="sb-badge">{{ mensagens_novas }}</span>{% endif %}
     </button>
+    <button class="sb-item" onclick="nav('indicacoes')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Indicações
+    </button>
   </nav>
   <div class="sb-footer">
     <span>{{ admin_nome }}</span>
@@ -380,6 +383,19 @@ tr:hover td{background:#fafaf8}
         <div class="card-head"><h2>Mensagens dos clientes</h2></div>
         <div id="lista-mensagens-geral" style="padding:0">
           <div class="empty" style="padding:40px"><p>Carregando...</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INDICAÇÕES -->
+    <section id="sec-indicacoes" style="display:none">
+      <div class="card">
+        <div class="card-head"><h2>Indicações</h2></div>
+        <div style="padding:16px">
+          <table>
+            <thead><tr><th>Indicado por</th><th>Nome indicado</th><th>E-mail / WhatsApp</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+            <tbody id="lista-indicacoes"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">Carregando...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -751,7 +767,7 @@ const HOST = window.location.origin;
 let _pid = null;
 
 // ── Navegação ──────────────────────────────────────────────
-const SECTIONS = ['dashboard','propostas','clientes','mensagens'];
+const SECTIONS = ['dashboard','propostas','clientes','mensagens','indicacoes'];
 function nav(name) {
   SECTIONS.forEach(s => {
     document.getElementById('sec-'+s).style.display = s===name ? '' : 'none';
@@ -761,7 +777,7 @@ function nav(name) {
   });
   document.getElementById('topbar-title').textContent = {
     dashboard:'Dashboard', propostas:'Propostas & Projetos',
-    clientes:'Clientes', mensagens:'Mensagens'
+    clientes:'Clientes', mensagens:'Mensagens', indicacoes:'Indicações'
   }[name];
   const ac = document.getElementById('topbar-actions');
   if(name==='propostas') {
@@ -773,6 +789,9 @@ function nav(name) {
   } else if(name==='mensagens') {
     ac.innerHTML = '';
     carregarMensagensGeral();
+  } else if(name==='indicacoes') {
+    ac.innerHTML = '';
+    carregarIndicacoes();
   } else {
     ac.innerHTML = '';
   }
@@ -1617,6 +1636,50 @@ async function salvarConfigMetricas() {
   } catch(e) {
     toast('Erro de conexão', false);
   }
+}
+
+// ── Indicações ─────────────────────────────────────────────
+const STATUS_INDICA = ['pendente','ganho','perdido'];
+async function carregarIndicacoes() {
+  const tbody = document.getElementById('lista-indicacoes');
+  try {
+    const r = await fetch('/admin/indicacoes', {headers:{Authorization:'Bearer '+TOKEN}});
+    const data = await r.json();
+    const lista = data.indicacoes || [];
+    if (!lista.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">Nenhuma indicação ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(i => `
+      <tr>
+        <td>${i.indicado_por_nome || i.cliente_token || '—'}</td>
+        <td>${i.nome_indicado}</td>
+        <td>${i.email_indicado || ''} ${i.whatsapp_indicado ? '<br><small>'+i.whatsapp_indicado+'</small>' : ''}</td>
+        <td>
+          <select onchange="atualizarIndicacao(${i.id}, this.value)" style="font-size:.74rem;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-family:'Montserrat',sans-serif">
+            ${STATUS_INDICA.map(s => `<option value="${s}" ${s===i.status?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+          </select>
+        </td>
+        <td style="color:var(--text3);font-size:.74rem">${i.criado_em ? i.criado_em.slice(0,10) : '—'}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="verClienteIndicacao('${i.cliente_token}')">Ver cliente</button></td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--red);padding:32px">Erro ao carregar indicações.</td></tr>';
+  }
+}
+async function atualizarIndicacao(id, status) {
+  try {
+    const r = await fetch(`/admin/indicacoes/${id}`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},
+      body: JSON.stringify({status})
+    });
+    if (r.ok) toast('Status atualizado!');
+    else toast('Erro ao atualizar', false);
+  } catch(e) { toast('Erro de conexão', false); }
+}
+function verClienteIndicacao(token) {
+  if (token) window.open('/p/'+token, '_blank');
 }
 </script>
 </body>
