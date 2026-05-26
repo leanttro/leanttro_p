@@ -194,6 +194,11 @@ footer a:hover{color:var(--accent)}
 .indica-status-pendente{background:var(--amber-light);color:var(--amber)}
 .indica-status-ganho{background:var(--green-light);color:var(--green)}
 .indica-status-perdido{background:var(--red-light);color:var(--red)}
+.indica-status-fechado{background:var(--green-light);color:var(--green)}
+.indica-status-em_contato{background:var(--blue-light,#dbeafe);color:var(--blue,#2563eb)}
+.indica-credito{font-size:.72rem;font-weight:700;color:var(--green);background:var(--green-light);padding:2px 8px;border-radius:20px;white-space:nowrap}
+.indica-saldo{background:var(--green-light,#dcfce7);border:1px solid var(--green,#22c55e);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:.82rem}
+.indica-saldo-valor{font-size:1.1rem;font-weight:700;color:var(--green,#22c55e)}
 .indica-empty{font-size:.78rem;color:var(--text3);text-align:center;padding:16px 0}
 
 /* ── RESPONSIVE ── */
@@ -315,6 +320,14 @@ footer a:hover{color:var(--accent)}
           <button class="indica-copy-btn" onclick="copiarLink()">Copiar</button>
         </div>
       </div>
+      {% set saldo = namespace(total=0) %}
+      {% for ind in indicacoes %}{% if ind.credito_liberado %}{% set saldo.total = saldo.total + ind.credito_liberado %}{% endif %}{% endfor %}
+      {% if saldo.total > 0 %}
+      <div class="indica-saldo">
+        <span style="font-weight:600;color:var(--text)">💳 Seu saldo de crédito Leanttro</span>
+        <span class="indica-saldo-valor">R$ {{ saldo.total|int }}</span>
+      </div>
+      {% endif %}
       <div>
         <div style="font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:8px">Minhas indicações</div>
         <div class="indica-list" id="indica-list">
@@ -322,7 +335,12 @@ footer a:hover{color:var(--accent)}
             {% for ind in indicacoes %}
             <div class="indica-item">
               <span class="indica-item-nome">{{ ind.nome_indicado }}</span>
-              <span class="indica-item-status indica-status-{{ ind.status }}">{{ ind.status|capitalize }}</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                {% if ind.credito_liberado and ind.credito_liberado > 0 %}
+                <span class="indica-credito">R$ {{ ind.credito_liberado|int }} crédito</span>
+                {% endif %}
+                <span class="indica-item-status indica-status-{{ ind.status }}">{{ ind.status|replace('_',' ')|capitalize }}</span>
+              </div>
             </div>
             {% endfor %}
           {% else %}
