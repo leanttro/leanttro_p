@@ -164,8 +164,8 @@ footer{background:var(--dark);padding:40px 20px 20px}
       <span></span>
       Você foi convidado a indicar
     </div>
-    <h1>Indique a Leanttro<br>e <em>ganhe crédito Leanttro</em></h1>
-    <p>Conhece alguém que precisa de um site, sistema ou automação? Indica pra gente — quando o negócio fechar, você ganha crédito pra usar nos seus próximos projetos com a Leanttro.</p>
+    <h1>Indique a Leanttro<br>e <em>ganhe recompensas</em></h1>
+    <p>Conhece alguém que precisa de um site, sistema ou automação? Indica pra gente — quando fechar, você ganha.</p>
   </div>
   <div class="hero-wave">
     <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -182,8 +182,8 @@ footer{background:var(--dark);padding:40px 20px 20px}
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
-        <h3>Preencha o formulário</h3>
-        <p>Informe o nome, e-mail ou WhatsApp da pessoa que você quer indicar.</p>
+        <h3>Acesse seu portal</h3>
+        <p>Entre no seu portal de cliente Leanttro e preencha os dados de quem você quer indicar.</p>
       </div>
       <div class="step">
         <div class="step-num">2</div>
@@ -192,50 +192,37 @@ footer{background:var(--dark);padding:40px 20px 20px}
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <h3>Você ganha crédito Leanttro</h3>
-        <p>Se o indicado fechar negócio, o crédito aparece automaticamente no seu painel. Simples assim.</p>
+        <h3>Você ganha a recompensa</h3>
+        <p>Se o indicado fechar negócio, você recebe sua recompensa. Simples assim.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── FORMULÁRIO ────────────────────────────────────── -->
+<!-- ── CTA ────────────────────────────────────────── -->
 <section class="form-section" id="formulario">
-  <div class="form-card">
-    <h2 class="form-card-title">Fazer indicação</h2>
-    <p class="form-card-sub">Preencha os dados de quem você quer indicar. Quanto mais informações, melhor!</p>
-
-    <div class="form-group">
-      <label for="nome_indicado">Nome completo <span class="obr">*</span></label>
-      <input type="text" id="nome_indicado" name="nome_indicado" placeholder="Ex: João Silva" autocomplete="name">
-    </div>
-
-    <div class="form-group">
-      <label for="email_indicado">E-mail</label>
-      <input type="email" id="email_indicado" name="email_indicado" placeholder="joao@empresa.com" autocomplete="email">
-    </div>
-
-    <div class="form-group">
-      <label for="whatsapp_indicado">WhatsApp</label>
-      <input type="tel" id="whatsapp_indicado" name="whatsapp_indicado" placeholder="(11) 99999-9999" autocomplete="tel">
-    </div>
-
-    <button class="btn-enviar" id="btnEnviar" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      Enviar indicação
-    </button>
-
-    <div class="feedback feedback-ok" id="feedbackOk" role="alert">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      <div>
-        <strong>Indicação enviada com sucesso!</strong><br>
-        Obrigado! Nossa equipe vai entrar em contato com o indicado em breve. Se fechar negócio, o crédito aparece no seu painel automaticamente.
-      </div>
-    </div>
-
-    <div class="feedback feedback-err" id="feedbackErr" role="alert">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <div id="feedbackErrMsg">Algo deu errado. Tente novamente.</div>
+  <div class="form-card" style="text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:16px">🤝</div>
+    <h2 class="form-card-title" style="margin-bottom:8px">Pronto para indicar?</h2>
+    <p class="form-card-sub">O formulário de indicação fica dentro do seu portal de cliente.<br>Acesse abaixo ou fale direto com a gente no WhatsApp.</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+      {% if slug %}
+      <a href="/c/{{ slug }}" class="btn-enviar" style="text-decoration:none;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Entrar no meu portal
+      </a>
+      {% else %}
+      <a href="https://portal.leanttro.com" class="btn-enviar" style="text-decoration:none;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Entrar no portal
+      </a>
+      {% endif %}
+      <a href="https://wa.me/5511913324827?text={{ 'Olá! Quero fazer uma indicação para a Leanttro.'|urlencode }}" target="_blank" rel="noopener"
+         style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:10px;background:#25D366;color:#fff;font-size:1rem;font-weight:700;text-decoration:none;transition:background .2s"
+         onmouseover="this.style.background='#1da850'" onmouseout="this.style.background='#25D366'">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Falar no WhatsApp
+      </a>
     </div>
   </div>
 </section>
@@ -244,22 +231,22 @@ footer{background:var(--dark);padding:40px 20px 20px}
 <section class="rewards">
   <div class="rewards-inner">
     <p class="section-label">O que você ganha</p>
-    <h2 class="section-title">Crédito Leanttro na sua conta</h2>
+    <h2 class="section-title">Recompensas exclusivas para quem indica</h2>
     <div class="rewards-grid">
       <div class="reward-card">
-        <div class="reward-icon">💳</div>
-        <h3>Projeto de R$ 500 a R$ 1.000</h3>
-        <p><strong>R$ 75 de crédito</strong> na sua conta Leanttro, disponível pra usar no seu próximo projeto ou serviço.</p>
+        <div class="reward-icon">💰</div>
+        <h3>Cashback no próximo projeto</h3>
+        <p>Receba desconto ou crédito em serviços futuros quando sua indicação fechar negócio.</p>
       </div>
       <div class="reward-card">
-        <div class="reward-icon">🚀</div>
-        <h3>Projeto acima de R$ 1.000</h3>
-        <p><strong>R$ 150 de crédito</strong> na sua conta Leanttro, disponível pra usar no seu próximo projeto ou serviço.</p>
+        <div class="reward-icon">🎁</div>
+        <h3>Benefícios exclusivos</h3>
+        <p>Acesso antecipado a novos produtos, relatórios premium ou serviços Leanttro.</p>
       </div>
       <div class="reward-card">
-        <div class="reward-icon">📊</div>
-        <h3>Acompanhe no painel</h3>
-        <p>O crédito aparece automaticamente no seu painel assim que a indicação fechar negócio. Transparente e sem burocracia.</p>
+        <div class="reward-icon">🤝</div>
+        <h3>Parceria de longo prazo</h3>
+        <p>Indique mais e construa uma parceria contínua com condições especiais na Leanttro.</p>
       </div>
     </div>
   </div>
@@ -290,107 +277,6 @@ footer{background:var(--dark);padding:40px 20px 20px}
   <div class="footer-bottom">© 2025 Leanttro Tecnologia · Todos os direitos reservados · <a href="https://leanttro.com">leanttro.com</a></div>
 </footer>
 
-<script>
-(function () {
-  const SLUG = "{{ slug }}";
 
-  const btnEnviar    = document.getElementById('btnEnviar');
-  const nomeInput    = document.getElementById('nome_indicado');
-  const emailInput   = document.getElementById('email_indicado');
-  const wppInput     = document.getElementById('whatsapp_indicado');
-  const feedbackOk   = document.getElementById('feedbackOk');
-  const feedbackErr  = document.getElementById('feedbackErr');
-  const feedbackErrMsg = document.getElementById('feedbackErrMsg');
-
-  // Máscara simples de WhatsApp
-  wppInput.addEventListener('input', function () {
-    let v = this.value.replace(/\D/g, '').slice(0, 11);
-    if (v.length > 6) v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
-    else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
-    else if (v.length > 0) v = '(' + v;
-    this.value = v;
-  });
-
-  function setLoading(on) {
-    btnEnviar.disabled = on;
-    btnEnviar.innerHTML = on
-      ? '<div class="spinner"></div> Enviando…'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar indicação';
-  }
-
-  function showFeedback(type, msg) {
-    feedbackOk.classList.remove('show');
-    feedbackErr.classList.remove('show');
-    if (type === 'ok') {
-      feedbackOk.classList.add('show');
-    } else {
-      feedbackErrMsg.textContent = msg || 'Algo deu errado. Tente novamente.';
-      feedbackErr.classList.add('show');
-    }
-    // Scroll suave até o feedback
-    setTimeout(() => {
-      (type === 'ok' ? feedbackOk : feedbackErr).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 80);
-  }
-
-  btnEnviar.addEventListener('click', async function () {
-    // Reset visual
-    [nomeInput, emailInput, wppInput].forEach(i => i.classList.remove('erro'));
-    feedbackOk.classList.remove('show');
-    feedbackErr.classList.remove('show');
-
-    const nome = nomeInput.value.trim();
-    const email = emailInput.value.trim();
-    const wpp = wppInput.value.trim();
-
-    if (!nome) {
-      nomeInput.classList.add('erro');
-      nomeInput.focus();
-      showFeedback('err', 'O nome do indicado é obrigatório.');
-      return;
-    }
-
-    if (!SLUG) {
-      showFeedback('err', 'Link de indicação inválido. Peça ao seu contato na Leanttro o link correto com ?ref=seuslug.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch('/indicar/' + SLUG, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome_indicado:      nome,
-          email_indicado:     email || null,
-          whatsapp_indicado:  wpp || null,
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (res.ok && data.ok) {
-        // Limpa formulário e mostra sucesso
-        nomeInput.value  = '';
-        emailInput.value = '';
-        wppInput.value   = '';
-        showFeedback('ok');
-      } else {
-        showFeedback('err', data.erro || 'Não foi possível registrar a indicação. Tente novamente.');
-      }
-    } catch (e) {
-      showFeedback('err', 'Erro de conexão. Verifique sua internet e tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  });
-
-  // Submit pelo Enter nos inputs
-  [nomeInput, emailInput, wppInput].forEach(inp => {
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') btnEnviar.click(); });
-  });
-})();
-</script>
 </body>
 </html>
