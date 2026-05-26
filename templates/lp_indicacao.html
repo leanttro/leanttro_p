@@ -350,6 +350,11 @@ footer{background:var(--dark);padding:40px 20px 20px}
       return;
     }
 
+    if (!SLUG) {
+      showFeedback('err', 'Link de indicação inválido. Peça ao seu contato na Leanttro o link correto com ?ref=seuslug.');
+      return;
+    }
+
     setLoading(true);
 
     try {
