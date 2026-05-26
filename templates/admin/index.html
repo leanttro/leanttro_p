@@ -394,7 +394,7 @@ tr:hover td{background:#fafaf8}
         <div class="card-head"><h2>Indicações</h2></div>
         <div style="padding:16px">
           <table>
-            <thead><tr><th>Indicado por</th><th>Nome indicado</th><th>E-mail / WhatsApp</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+            <thead><tr><th>Indicado por</th><th>Nome indicado</th><th>E-mail / WhatsApp</th><th>Status</th><th>Valor Projeto</th><th>Crédito</th><th>Data</th><th>Ações</th></tr></thead>
             <tbody id="lista-indicacoes"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">Carregando...</td></tr></tbody>
           </table>
         </div>
@@ -1640,7 +1640,7 @@ async function salvarConfigMetricas() {
 }
 
 // ── Indicações ─────────────────────────────────────────────
-const STATUS_INDICA = ['pendente','ganho','perdido'];
+const STATUS_INDICA = ['pendente','em_contato','fechado','perdido'];
 async function carregarIndicacoes() {
   const tbody = document.getElementById('lista-indicacoes');
   try {
@@ -1653,30 +1653,50 @@ async function carregarIndicacoes() {
     }
     tbody.innerHTML = lista.map(i => `
       <tr>
-        <td>${i.indicado_por_nome || i.cliente_token || '—'}</td>
+        <td>${i.indicado_por_nome || '—'}</td>
         <td>${i.nome_indicado}</td>
         <td>${i.email_indicado || ''} ${i.whatsapp_indicado ? '<br><small>'+i.whatsapp_indicado+'</small>' : ''}</td>
         <td>
-          <select onchange="atualizarIndicacao(${i.id}, this.value)" style="font-size:.74rem;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-family:'Montserrat',sans-serif">
-            ${STATUS_INDICA.map(s => `<option value="${s}" ${s===i.status?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+          <select onchange="atualizarIndicacaoStatus(${i.id}, this.value)" style="font-size:.74rem;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-family:'Montserrat',sans-serif">
+            ${STATUS_INDICA.map(s => `<option value="${s}" ${s===i.status?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1).replace('_',' ')}</option>`).join('')}
           </select>
         </td>
+        <td>
+          <input type="number" placeholder="R$ valor" value="${i.valor_projeto || ''}"
+            onblur="atualizarValorProjeto(${i.id}, this.value)"
+            style="width:90px;font-size:.74rem;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-family:'Montserrat',sans-serif">
+        </td>
+        <td style="font-size:.8rem;font-weight:600;color:${i.credito_liberado > 0 ? 'var(--green,#22c55e)' : 'var(--text3)'}">
+          ${i.credito_liberado > 0 ? 'R$ '+Number(i.credito_liberado).toFixed(0) : '—'}
+        </td>
         <td style="color:var(--text3);font-size:.74rem">${i.criado_em ? i.criado_em.slice(0,10) : '—'}</td>
-        <td><button class="btn btn-secondary btn-sm" onclick="verClienteIndicacao('${i.cliente_token}')">Ver cliente</button></td>
+        <td><button class="btn btn-secondary btn-sm" onclick="verClienteIndicacao('${i.cliente_slug}')">Ver cliente</button></td>
       </tr>`).join('');
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--red);padding:32px">Erro ao carregar indicações.</td></tr>';
   }
 }
-async function atualizarIndicacao(id, status) {
+async function atualizarIndicacaoStatus(id, status) {
   try {
     const r = await fetch(`/admin/indicacoes/${id}`, {
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({status})
     });
-    if (r.ok) toast('Status atualizado!');
+    if (r.ok) { toast('Status atualizado!'); carregarIndicacoes(); }
     else toast('Erro ao atualizar', false);
+  } catch(e) { toast('Erro de conexão', false); }
+}
+async function atualizarValorProjeto(id, valor) {
+  if (!valor) return;
+  try {
+    const r = await fetch(`/admin/indicacoes/${id}`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({valor_projeto: parseFloat(valor)})
+    });
+    if (r.ok) { toast('Valor salvo!'); carregarIndicacoes(); }
+    else toast('Erro ao salvar valor', false);
   } catch(e) { toast('Erro de conexão', false); }
 }
 function verClienteIndicacao(token) {
