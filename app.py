@@ -90,20 +90,6 @@ def get_db():
         )
     return g.db
 
-def get_db2():
-    if "db2" not in g:
-        database_url2 = os.getenv("DATABASE_URL_2")
-        if not database_url2:
-            raise RuntimeError(
-                "DATABASE_URL_2 nao configurada. "
-                "Defina a variavel de ambiente DATABASE_URL_2 antes de iniciar o servidor."
-            )
-        g.db2 = psycopg2.connect(
-            dsn=database_url2,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    return g.db2
-
 def _ensure_metricas_columns():
     """Garante que as colunas do módulo de métricas existem no banco."""
     try:
@@ -130,6 +116,39 @@ def close_db(e=None):
     if db:
         try: db.close()
         except: pass
+    db2 = g.pop("db2", None)
+    if db2:
+        try: db2.close()
+        except: pass
+
+def get_db2():
+    if "db2" not in g:
+        database_url2 = os.getenv("DATABASE_URL_2")
+        if not database_url2:
+            raise RuntimeError(
+                "DATABASE_URL_2 nao configurada. "
+                "Defina a variavel de ambiente DATABASE_URL_2 antes de iniciar o servidor."
+            )
+        g.db2 = psycopg2.connect(
+            dsn=database_url2,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    return g.db2
+
+def query2(sql, params=(), one=False, commit=False):
+    db = get_db2()
+    cur = db.cursor()
+    try:
+        cur.execute(sql, params)
+        if commit:
+            db.commit()
+            try:    return cur.fetchone()
+            except: return None
+        return cur.fetchone() if one else cur.fetchall()
+    except Exception as e:
+        if commit:
+            db.rollback()
+        raise e
 
 def query(sql, params=(), one=False, commit=False):
     db = get_db()
@@ -1107,7 +1126,7 @@ def portal_cliente(token):
         contrato["contrato_assinado_em"] = contrato["contrato_assinado_em"].isoformat()
 
     cliente_id = p["cliente_id"]
-    indicacoes = query(
+    indicacoes = query2(
         "SELECT * FROM indicacoes WHERE client_id=%s ORDER BY criado_em DESC",
         (cliente_id,)
     ) or []
@@ -1148,7 +1167,7 @@ def receber_indicacao(slug):
     nome = d.get("nome_indicado", "").strip()
     if not nome:
         return jsonify({"ok": False, "erro": "Nome obrigatório"}), 400
-    query(
+    query2(
         "INSERT INTO indicacoes (client_id, nome_indicado, email_indicado, whatsapp_indicado) VALUES (%s,%s,%s,%s)",
         (cliente["id"], nome, d.get("email_indicado"), d.get("whatsapp_indicado")),
         commit=True
@@ -1237,13 +1256,20 @@ def lp_indicar_amigo():
 @app.route("/admin/indicacoes")
 @login_required
 def admin_indicacoes_listar():
-    rows = query("""
-        SELECT i.*, c.nome as indicado_por_nome, c.slug as cliente_slug
+    rows = query2("""
+        SELECT i.*, i.client_id as indicado_por_id
         FROM indicacoes i
-        LEFT JOIN clientes c ON c.id = i.client_id
         ORDER BY i.criado_em DESC
     """) or []
-    return jsonify({"indicacoes": [dict(r) for r in rows]})
+    # Busca nomes dos clientes no banco principal
+    result = []
+    for r in rows:
+        row = dict(r)
+        c = query("SELECT nome, slug FROM clientes WHERE id=%s", (row.get("client_id"),), one=True)
+        row["indicado_por_nome"] = c["nome"] if c else None
+        row["cliente_slug"] = c["slug"] if c else None
+        result.append(row)
+    return jsonify({"indicacoes": result})
 
 @app.route("/admin/indicacoes/<int:iid>", methods=["PUT"])
 @login_required
@@ -1259,7 +1285,7 @@ def admin_indicacao_atualizar(iid):
     if not sets:
         return jsonify({"ok": False}), 400
     vals.append(iid)
-    query(f"UPDATE indicacoes SET {', '.join(sets)} WHERE id=%s", vals, commit=True)
+    query2(f"UPDATE indicacoes SET {', '.join(sets)} WHERE id=%s", vals, commit=True)
     return jsonify({"ok": True})
 
 # ═══════════════════════════════════════════════════════════
@@ -1269,7 +1295,7 @@ def admin_indicacao_atualizar(iid):
 @app.route("/api/produtos")
 def api_produtos_publico():
     """Retorna produtos/serviços cadastrados — usado pela lp_precos.html"""
-    rows = query("""
+    rows = query2("""
         SELECT id, nome, descricao, categoria, valor_unit, recorrente, periodo,
                destaque, preco_json
         FROM produtos
