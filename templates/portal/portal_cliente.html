@@ -312,14 +312,8 @@ footer a:hover{color:var(--accent)}
   <div style="margin-top:36px">
     <div class="section-title">Programa de indicações</div>
     <div class="indica-box">
-      <div>
-        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:4px">Seu link de indicação</div>
-        <div style="font-size:.76rem;color:var(--text2);margin-bottom:10px">Compartilhe com amigos e acompanhe o status das suas indicações abaixo.</div>
-        <div class="indica-link-row">
-          <input class="indica-link-input" id="indica-link" readonly value="{{ indica_link or '' }}">
-          <button class="indica-copy-btn" onclick="copiarLink()">Copiar</button>
-        </div>
-      </div>
+
+      <!-- Saldo de crédito -->
       {% set saldo = namespace(total=0) %}
       {% for ind in indicacoes %}{% if ind.credito_liberado %}{% set saldo.total = saldo.total + ind.credito_liberado %}{% endif %}{% endfor %}
       {% if saldo.total > 0 %}
@@ -328,6 +322,23 @@ footer a:hover{color:var(--accent)}
         <span class="indica-saldo-valor">R$ {{ saldo.total|int }}</span>
       </div>
       {% endif %}
+
+      <!-- Formulário de nova indicação -->
+      <div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:4px">Indicar alguém</div>
+        <div style="font-size:.76rem;color:var(--text2);margin-bottom:12px">Informe os dados de quem você quer indicar. Quando fechar negócio, você ganha crédito!</div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="indica-form">
+          <input class="indica-link-input" id="indica-nome" type="text" placeholder="Nome completo *" style="background:#fff;cursor:text">
+          <input class="indica-link-input" id="indica-email" type="email" placeholder="E-mail" style="background:#fff;cursor:text">
+          <input class="indica-link-input" id="indica-wpp" type="tel" placeholder="WhatsApp (ex: 11 99999-9999)" style="background:#fff;cursor:text">
+          <button class="indica-copy-btn" id="indica-enviar-btn" onclick="enviarIndicacao()" style="align-self:flex-start;padding:8px 20px">
+            Enviar indicação
+          </button>
+          <div id="indica-feedback" style="display:none;font-size:.76rem;border-radius:6px;padding:8px 12px;margin-top:2px"></div>
+        </div>
+      </div>
+
+      <!-- Lista de indicações anteriores -->
       <div>
         <div style="font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:8px">Minhas indicações</div>
         <div class="indica-list" id="indica-list">
@@ -347,10 +358,11 @@ footer a:hover{color:var(--accent)}
             </div>
             {% endfor %}
           {% else %}
-            <div class="indica-empty">Nenhuma indicação ainda. Compartilhe seu link!</div>
+            <div class="indica-empty" id="indica-empty-msg">Nenhuma indicação ainda. Use o formulário acima!</div>
           {% endif %}
         </div>
       </div>
+
     </div>
   </div>
 
@@ -409,10 +421,8 @@ async function carregarPrecos() {
     const section = document.getElementById('precos-section');
     const ativos = (data.produtos || data).filter(p => p.ativo !== false);
     if (!ativos.length) { section.innerHTML = '<div style="color:var(--text3);font-size:.78rem">Nenhum serviço disponível no momento.</div>'; return; }
-
     const produtos   = ativos.filter(p => p.tipo === 'loja');
     const portfolios = ativos.filter(p => p.tipo === 'portfolio' || !p.tipo);
-
     let html = '';
     if (produtos.length) {
       html += `<div><div class="precos-subsection-label">Produtos &amp; Acesso</div><div class="precos-list">${
@@ -432,15 +442,91 @@ async function carregarPrecos() {
     document.getElementById('precos-section').innerHTML = '<div style="color:var(--text3);font-size:.78rem">Não foi possível carregar os preços.</div>';
   }
 }
-function copiarLink() {
-  const inp = document.getElementById('indica-link');
-  if (!inp.value) return;
-  navigator.clipboard.writeText(inp.value).then(() => {
-    const btn = document.querySelector('.indica-copy-btn');
-    btn.textContent = 'Copiado!';
-    setTimeout(() => btn.textContent = 'Copiar', 2000);
-  });
+
+// Máscara WhatsApp
+document.getElementById('indica-wpp').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 6) v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+  else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
+  else if (v.length > 0) v = '(' + v;
+  this.value = v;
+});
+
+// Pega o slug do cliente a partir da URL do portal
+const _INDICA_SLUG = (function() {
+  // Tenta /c/<slug> ou extrai do indica_link injetado pelo Jinja
+  const indicaLink = "{{ indica_link or '' }}";
+  const m = indicaLink.match(/[?&]ref=([^&]+)/);
+  return m ? m[1] : '';
+})();
+
+async function enviarIndicacao() {
+  const nome  = document.getElementById('indica-nome').value.trim();
+  const email = document.getElementById('indica-email').value.trim();
+  const wpp   = document.getElementById('indica-wpp').value.trim();
+  const fb    = document.getElementById('indica-feedback');
+  const btn   = document.getElementById('indica-enviar-btn');
+
+  if (!nome) {
+    fb.style.display = 'block';
+    fb.style.background = '#fef2f2';
+    fb.style.color = '#b91c1c';
+    fb.textContent = 'O nome do indicado é obrigatório.';
+    document.getElementById('indica-nome').focus();
+    return;
+  }
+  if (!_INDICA_SLUG) {
+    fb.style.display = 'block';
+    fb.style.background = '#fef2f2';
+    fb.style.color = '#b91c1c';
+    fb.textContent = 'Não foi possível identificar seu perfil. Recarregue a página.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+  fb.style.display = 'none';
+
+  try {
+    const res = await fetch('/indicar/' + _INDICA_SLUG, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ nome_indicado: nome, email_indicado: email || null, whatsapp_indicado: wpp || null }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      document.getElementById('indica-nome').value  = '';
+      document.getElementById('indica-email').value = '';
+      document.getElementById('indica-wpp').value   = '';
+      fb.style.display = 'block';
+      fb.style.background = '#f0fdf4';
+      fb.style.color = '#15803d';
+      fb.textContent = '✓ Indicação enviada! Nossa equipe vai entrar em contato em breve.';
+      // Adiciona na lista sem reload
+      const lista = document.getElementById('indica-list');
+      const empty = document.getElementById('indica-empty-msg');
+      if (empty) empty.remove();
+      const item = document.createElement('div');
+      item.className = 'indica-item';
+      item.innerHTML = `<span class="indica-item-nome">${nome}</span><span class="indica-item-status indica-status-novo">Novo</span>`;
+      lista.prepend(item);
+    } else {
+      fb.style.display = 'block';
+      fb.style.background = '#fef2f2';
+      fb.style.color = '#b91c1c';
+      fb.textContent = data.erro || 'Não foi possível registrar. Tente novamente.';
+    }
+  } catch(e) {
+    fb.style.display = 'block';
+    fb.style.background = '#fef2f2';
+    fb.style.color = '#b91c1c';
+    fb.textContent = 'Erro de conexão. Verifique sua internet.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar indicação';
+  }
 }
+
 carregarPrecos();
 </script>
 
