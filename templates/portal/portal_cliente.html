@@ -136,37 +136,41 @@ footer a{color:var(--text3);text-decoration:none}
 footer a:hover{color:var(--accent)}
 
 /* ── PREÇOS ── */
-.precos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:0}
-.preco-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:.15s}
-.preco-card:hover{box-shadow:var(--shadow-md)}
+.precos-section{display:flex;flex-direction:column;gap:24px;margin-top:0}
+.precos-subsection-label{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-left:2px}
+.precos-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.preco-card{background:var(--surface);border-bottom:1px solid var(--border);overflow:hidden;transition:.15s}
+.preco-card:last-child{border-bottom:none}
+.preco-card:hover{background:var(--surface2)}
 .preco-card-header{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:16px 18px;cursor:pointer;user-select:none;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 16px;cursor:pointer;user-select:none;
 }
-.preco-card-header-left{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
-.preco-card-nome{font-size:.82rem;font-weight:700;color:var(--text);line-height:1.3}
-.preco-card-valor{font-size:.92rem;font-weight:700;color:var(--accent)}
-.preco-card-valor.sob-consulta{color:var(--text3)}
+.preco-card-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.preco-card-nome{font-size:.82rem;font-weight:600;color:var(--text);line-height:1.3;flex:1;min-width:0}
+.preco-card-valor{font-size:.8rem;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0}
+.preco-card-valor.sob-consulta{color:var(--text3);font-weight:500}
 .preco-card-arrow{
-  width:26px;height:26px;border-radius:50%;background:var(--surface2);
+  width:24px;height:24px;border-radius:50%;background:var(--surface2);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   transition:transform .25s,background .15s;
 }
-.preco-card-arrow svg{width:13px;height:13px;stroke:var(--text3);fill:none;stroke-width:2.5}
-.preco-card.open .preco-card-arrow{transform:rotate(180deg);background:var(--text);stroke:var(--text)}
+.preco-card-arrow svg{width:12px;height:12px;stroke:var(--text3);fill:none;stroke-width:2.5}
+.preco-card.open .preco-card-arrow{transform:rotate(180deg);background:var(--text)}
 .preco-card.open .preco-card-arrow svg{stroke:#fff}
+.preco-card.open{background:var(--surface)}
 .preco-card-body{
   max-height:0;overflow:hidden;
-  transition:max-height .28s ease,padding .28s ease;
-  padding:0 18px;
+  transition:max-height .3s ease,padding .3s ease;
+  padding:0 16px;
   border-top:0px solid var(--border);
 }
 .preco-card.open .preco-card-body{
-  max-height:300px;
-  padding:12px 18px 16px;
+  max-height:320px;
+  padding:12px 16px 16px;
   border-top:1px solid var(--border);
 }
-.preco-card-desc{font-size:.74rem;color:var(--text2);line-height:1.55}
+.preco-card-desc{font-size:.75rem;color:var(--text2);line-height:1.6}
 .preco-card-wpp{
   display:inline-flex;align-items:center;gap:6px;
   margin-top:10px;padding:7px 13px;border-radius:var(--radius-sm);
@@ -293,14 +297,9 @@ footer a:hover{color:var(--accent)}
 
   <!-- PREÇOS -->
   <div style="margin-top:36px">
-    <div class="precos-toggle section-title" id="precos-toggle" onclick="togglePrecos()">
-      Nossos serviços &amp; preços
-      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="precos-body" id="precos-body">
-      <div class="precos-grid" id="precos-grid">
-        <div style="color:var(--text3);font-size:.78rem">Carregando...</div>
-      </div>
+    <div class="section-title">Nossos serviços &amp; preços</div>
+    <div class="precos-section" id="precos-section">
+      <div style="color:var(--text3);font-size:.78rem">Carregando...</div>
     </div>
   </div>
 
@@ -348,60 +347,68 @@ footer a:hover{color:var(--accent)}
 {% endif %}
 
 <script>
-function togglePrecos(){
-  const t=document.getElementById('precos-toggle'),b=document.getElementById('precos-body');
-  t.classList.toggle('open');b.classList.toggle('open');
-}
 function formatPreco(v) {
   return 'R$ ' + parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 function formatPrecoJson(p) {
   const j = p.preco_json ? (typeof p.preco_json === 'string' ? JSON.parse(p.preco_json) : p.preco_json) : null;
-  if (!j) return p.preco ? formatPreco(p.preco) : 'Consulte';
-  if (j.setup && j.mensal) return formatPreco(j.setup) + ' setup + ' + formatPreco(j.mensal) + '/mês';
+  if (!j) return p.preco ? formatPreco(p.preco) : null;
+  if (j.setup && j.mensal) return formatPreco(j.setup) + ' + ' + formatPreco(j.mensal) + '/mês';
   if (j.mensal) return formatPreco(j.mensal) + '/mês';
   if (j.unico) return formatPreco(j.unico);
-  return 'Consulte';
+  return null;
 }
-const WPP_NUM = '5511999999999'; // número da Leanttro para botão Sob consulta
+const WPP_NUM = '5511999999999';
 function togglePrecoCard(el) {
-  const card = el.closest('.preco-card');
-  card.classList.toggle('open');
+  el.closest('.preco-card').classList.toggle('open');
 }
+const wppSvg = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+const arrowSvg = `<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+function buildCardHtml(p, isSob, val) {
+  const wppLink = `https://wa.me/${WPP_NUM}?text=${encodeURIComponent('Olá! Tenho interesse no serviço: ' + p.nome)}`;
+  const hasDetails = p.descricao || isSob;
+  const body = `
+    ${p.descricao ? `<div class="preco-card-desc">${p.descricao}</div>` : ''}
+    ${isSob ? `<a href="${wppLink}" target="_blank" class="preco-card-wpp">${wppSvg} Falar no WhatsApp</a>` : ''}`;
+  return `<div class="preco-card">
+    <div class="preco-card-header" onclick="togglePrecoCard(this)">
+      <div class="preco-card-nome">${p.nome}</div>
+      <div class="preco-card-valor${isSob?' sob-consulta':''}">${val}</div>
+      ${hasDetails?`<div class="preco-card-arrow">${arrowSvg}</div>`:''}
+    </div>
+    ${hasDetails?`<div class="preco-card-body">${body}</div>`:''}
+  </div>`;
+}
+
 async function carregarPrecos() {
   try {
     const r = await fetch('https://leanttro.com/api/produtos');
     const data = await r.json();
-    const grid = document.getElementById('precos-grid');
+    const section = document.getElementById('precos-section');
     const ativos = (data.produtos || data).filter(p => p.ativo !== false);
-    if (!ativos.length) { grid.innerHTML = '<div style="color:var(--text3);font-size:.78rem">Nenhum serviço disponível no momento.</div>'; return; }
+    if (!ativos.length) { section.innerHTML = '<div style="color:var(--text3);font-size:.78rem">Nenhum serviço disponível no momento.</div>'; return; }
 
-    const wppSvg = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
-    const arrowSvg = `<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`;
+    const produtos   = ativos.filter(p => p.tipo === 'loja');
+    const portfolios = ativos.filter(p => p.tipo === 'portfolio' || !p.tipo);
 
-    grid.innerHTML = ativos.map(p => {
-      const isSobConsulta = p.tipo === 'portfolio' || (!p.preco && !p.preco_json);
-      const val = isSobConsulta ? 'Sob consulta' : (p.tipo === 'loja' && parseFloat(p.preco || 0) > 0 ? formatPrecoJson(p) : 'Sob consulta');
-      const wppLink = `https://wa.me/${WPP_NUM}?text=${encodeURIComponent('Olá! Tenho interesse no serviço: ' + p.nome)}`;
-      const bodyContent = `
-        ${p.descricao ? `<div class="preco-card-desc">${p.descricao}</div>` : ''}
-        ${isSobConsulta || val === 'Sob consulta' ? `<a href="${wppLink}" target="_blank" class="preco-card-wpp">${wppSvg} Falar no WhatsApp</a>` : ''}
-      `;
-      const hasDetails = (p.descricao || isSobConsulta || val === 'Sob consulta');
-      return `
-      <div class="preco-card">
-        <div class="preco-card-header" onclick="togglePrecoCard(this)">
-          <div class="preco-card-header-left">
-            <div class="preco-card-nome">${p.nome}</div>
-            <div class="preco-card-valor${isSobConsulta || val==='Sob consulta' ? ' sob-consulta':''}">${val}</div>
-          </div>
-          ${hasDetails ? `<div class="preco-card-arrow">${arrowSvg}</div>` : ''}
-        </div>
-        ${hasDetails ? `<div class="preco-card-body">${bodyContent}</div>` : ''}
-      </div>`;
-    }).join('');
+    let html = '';
+    if (produtos.length) {
+      html += `<div><div class="precos-subsection-label">Produtos &amp; Acesso</div><div class="precos-list">${
+        produtos.map(p => {
+          const v = formatPrecoJson(p) || (p.preco ? formatPreco(p.preco) : null);
+          return buildCardHtml(p, !v, v || 'Sob consulta');
+        }).join('')
+      }</div></div>`;
+    }
+    if (portfolios.length) {
+      html += `<div><div class="precos-subsection-label">Portfólio &amp; Projetos</div><div class="precos-list">${
+        portfolios.map(p => buildCardHtml(p, true, 'Sob consulta')).join('')
+      }</div></div>`;
+    }
+    section.innerHTML = html || '<div style="color:var(--text3);font-size:.78rem">Nenhum serviço disponível.</div>';
   } catch(e) {
-    document.getElementById('precos-grid').innerHTML = '<div style="color:var(--text3);font-size:.78rem">Não foi possível carregar os preços.</div>';
+    document.getElementById('precos-section').innerHTML = '<div style="color:var(--text3);font-size:.78rem">Não foi possível carregar os preços.</div>';
   }
 }
 function copiarLink() {
