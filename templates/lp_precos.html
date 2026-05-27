@@ -115,11 +115,12 @@ header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top
   padding:0 20px;border-top:0px solid var(--border);
 }
 .produto-item.open .item-body{
-  max-height:2000px;
+  max-height:400px;
   padding:14px 20px 20px;
   border-top:1px solid var(--border);
 }
 .item-desc{font-size:.84rem;color:var(--muted);line-height:1.65;margin-bottom:14px}
+.item-img{width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-bottom:14px;display:block}
 .item-preco-detalhe{font-size:.78rem;color:var(--muted);margin-bottom:4px}
 .item-preco-detalhe strong{color:var(--text)}
 .item-cta{
@@ -377,6 +378,7 @@ footer{background:var(--dark);padding:40px 20px 20px}
         <div class="item-arrow">${arrowSvg}</div>
       </div>
       <div class="item-body">
+        ${prod.imagem_url ? `<img class="item-img" src="${prod.imagem_url}" alt="${nome}">` : ''}
         ${desc ? `<div class="item-desc">${desc}</div>` : ''}
         ${!isSob ? detalhePreco(preco) : ''}
         <a href="https://wa.me/${WPP}?text=${wppMsg}" class="item-cta" target="_blank" rel="noopener">
