@@ -781,16 +781,40 @@ def api_ia_gerar_mensagem():
 @app.route("/api/ia/gerar-contrato", methods=["POST"])
 @login_required
 def api_ia_gerar_contrato():
-    """Gera texto de contrato via Groq com base nos dados da proposta"""
+    """Gera texto de contrato via Groq com base nos dados da proposta.
+
+    O campo 'servicos' pode ser:
+      - string simples (comportamento original)
+      - lista de dicts com {nome, valor_unit, quantidade, recorrente, periodo}
+        vindos do catálogo de serviços (api_admin_catalogo_servicos)
+    """
     d = request.json or {}
     cliente_nome    = d.get("cliente_nome", "")
     cliente_empresa = d.get("cliente_empresa", "")
-    servicos        = d.get("servicos", "")
+    servicos_raw    = d.get("servicos", "")
     valor           = d.get("valor", "0")
     forma_pgto      = d.get("forma_pagamento", "")
     duracao         = d.get("duracao", "")
     tipo            = d.get("tipo", "pontual")  # 'pontual' ou 'recorrente'
     prazo           = d.get("prazo_entrega", "")
+
+    # Normaliza servicos: lista estruturada → texto descritivo
+    if isinstance(servicos_raw, list):
+        linhas = []
+        for s in servicos_raw:
+            nome  = s.get("nome", "")
+            qtd   = float(s.get("quantidade", 1) or 1)
+            vunit = float(s.get("valor_unit", 0) or 0)
+            total_item = qtd * vunit
+            periodo = s.get("periodo", "")
+            rec     = s.get("recorrente", False)
+            sufixo  = f"/{periodo}" if rec and periodo else ""
+            linhas.append(
+                f"- {nome}: R$ {total_item:,.2f}{sufixo}".replace(",", "X").replace(".", ",").replace("X", ".")
+            )
+        servicos = "\n".join(linhas) if linhas else "Conforme proposta"
+    else:
+        servicos = servicos_raw or "Conforme proposta"
 
     tipo_label = "prestação de serviço pontual" if tipo == "pontual" else "prestação de serviço recorrente/mensal"
 
@@ -798,8 +822,9 @@ def api_ia_gerar_contrato():
 
 CONTRATANTE: {cliente_nome}{f'  {cliente_empresa}' if cliente_empresa else ''}
 CONTRATADA: Leanttro Tecnologia — CNPJ 63.556.406/0001-75 — São Paulo/SP
-SERVIÇOS: {servicos}
-VALOR: R$ {valor}{f' — {forma_pgto}' if forma_pgto else ''}
+SERVIÇOS:
+{servicos}
+VALOR TOTAL: R$ {valor}{f' — {forma_pgto}' if forma_pgto else ''}
 {'DURAÇÃO: ' + duracao if duracao else ''}
 {'PRAZO DE ENTREGA: ' + prazo if prazo else ''}
 
@@ -1351,6 +1376,32 @@ def api_produtos_publico():
                 p["preco_json"] = {}
         produtos.append(p)
     return jsonify(produtos)
+
+# ═══════════════════════════════════════════════════════════
+#  API ADMIN  CATÁLOGO DE SERVIÇOS (para seletor na proposta)
+# ═══════════════════════════════════════════════════════════
+
+@app.route("/api/admin/catalogo-servicos")
+@login_required
+def api_admin_catalogo_servicos():
+    """Retorna produtos/serviços do catálogo (DATABASE_URL_2) para
+    o admin selecionar ao montar os serviços de uma proposta.
+    Retorna apenas os campos necessários para o seletor do frontend."""
+    rows = query2("""
+        SELECT id, nome, descricao, categoria, valor_unit, recorrente, periodo
+        FROM produtos
+        ORDER BY categoria, nome
+    """) or []
+    catalogo = []
+    for r in rows:
+        item = dict(r)
+        # Garante que valor_unit é float
+        try:
+            item["valor_unit"] = float(item["valor_unit"] or 0)
+        except (TypeError, ValueError):
+            item["valor_unit"] = 0.0
+        catalogo.append(item)
+    return jsonify(catalogo)
 
 # ═══════════════════════════════════════════════════════════
 #  ROTA RAIZ
