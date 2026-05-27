@@ -225,6 +225,21 @@ tr:hover td{background:#fafaf8}
 .empty{text-align:center;padding:40px 20px;color:var(--text3)}
 .empty svg{width:36px;height:36px;stroke:var(--border2);fill:none;stroke-width:1.5;margin-bottom:10px}
 .empty p{font-size:.8rem}
+
+/* ── CATÁLOGO DE SERVIÇOS ── */
+.catalogo-grid{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding:2px}
+.catalogo-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:.15s;background:var(--surface)}
+.catalogo-item:hover{border-color:var(--accent);background:var(--accent-light)}
+.catalogo-item.selecionado{border-color:var(--accent);background:var(--accent-light)}
+.catalogo-item .ci-check{width:18px;height:18px;border:2px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s}
+.catalogo-item.selecionado .ci-check{background:var(--accent);border-color:var(--accent)}
+.catalogo-item.selecionado .ci-check::after{content:'✓';color:#fff;font-size:.65rem;font-weight:700}
+.catalogo-item .ci-info{flex:1;min-width:0}
+.catalogo-item .ci-nome{font-size:.82rem;font-weight:600;color:var(--text)}
+.catalogo-item .ci-desc{font-size:.72rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catalogo-item .ci-valor{font-size:.82rem;font-weight:700;color:var(--accent);flex-shrink:0;white-space:nowrap}
+.catalogo-cat{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);padding:8px 4px 4px;margin-top:4px}
+.catalogo-loading{text-align:center;padding:32px;color:var(--text3);font-size:.8rem}
 </style>
 </head>
 <body>
@@ -486,7 +501,10 @@ tr:hover td{background:#fafaf8}
       <div class="section-block">
         <div class="section-block-head">
           <h4>Serviços contratados</h4>
-          <button class="btn btn-secondary btn-sm" onclick="addServico()">+ Adicionar</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm" onclick="abrirCatalogo()"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Catálogo</button>
+            <button class="btn btn-secondary btn-sm" onclick="addServico()">+ Manual</button>
+          </div>
         </div>
         <div class="section-block-body" id="lista-servicos">
           <div class="empty-block">Nenhum serviço adicionado.</div>
@@ -756,6 +774,31 @@ tr:hover td{background:#fafaf8}
     <button class="btn btn-primary" id="dup-btn-confirmar" onclick="confirmarDuplicar()">
       <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       Duplicar
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════ MODAL CATÁLOGO ═══════════════════ -->
+<div class="overlay" id="modal-catalogo">
+<div class="modal" style="max-width:560px">
+  <div class="modal-head">
+    <h3>Catálogo de Serviços</h3>
+    <button class="x-btn" onclick="fechar('modal-catalogo')">✕</button>
+  </div>
+  <div class="modal-body" style="padding:14px 16px">
+    <input id="catalogo-busca" class="card-search" placeholder="Buscar serviço..." style="width:100%;margin-bottom:12px"
+      oninput="filtrarCatalogo(this.value)">
+    <div class="catalogo-grid" id="catalogo-lista">
+      <div class="catalogo-loading">Carregando catálogo...</div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <span id="catalogo-sel-count" style="font-size:.75rem;color:var(--text3);margin-right:auto"></span>
+    <button class="btn btn-secondary" onclick="fechar('modal-catalogo')">Cancelar</button>
+    <button class="btn btn-primary" onclick="confirmarCatalogo()">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Adicionar selecionados
     </button>
   </div>
 </div>
@@ -1483,38 +1526,45 @@ async function gerarContrato() {
   btn.disabled = true;
   btn.textContent = '⏳ Gerando...';
 
-  const titulo    = document.getElementById('mp-titulo').value;
+  const titulo      = document.getElementById('mp-titulo').value;
   const clienteNome = document.getElementById('mp-cliente').options[document.getElementById('mp-cliente').selectedIndex]?.text || '';
-  const valor     = document.getElementById('total-display')?.textContent?.replace(/\D/g,'') || '0';
-  const formaPgto = document.getElementById('mp-pagamento')?.value || '';
-  const prazo     = document.getElementById('mp-prazo')?.value || '';
+  const valor       = document.getElementById('total-display')?.textContent || '';
+  const formaPgto   = document.getElementById('mp-pagamento')?.value || '';
+  const prazo       = document.getElementById('mp-prazo')?.value || '';
 
-  const linhasServico = document.querySelectorAll('.servico-row');
-  const servicosTexto = Array.from(linhasServico)
-    .map(r => r.querySelector('.s-nome')?.value).filter(Boolean).join(', ');
+  // Lista estruturada de serviços (nome, qtd, valor, categoria, descrição)
+  const servicosLista = coletarServicos();
+  const servicosTexto = servicosLista.map(s =>
+    `${s.nome} (qtd: ${s.quantidade}, valor: R$ ${Number(s.valor_unit).toFixed(2)}, categoria: ${s.categoria})`
+  ).join('; ') || titulo;
 
-  const res = await fetch('/api/ia/gerar-contrato', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      cliente_nome:    clienteNome.split(' — ')[0].trim(),
-      cliente_empresa: clienteNome.split(' — ')[1]?.trim() || '',
-      servicos:        servicosTexto || titulo,
-      valor:           valor,
-      forma_pagamento: formaPgto,
-      duracao:         document.getElementById('ct-duracao').value,
-      tipo:            document.getElementById('ct-tipo').value,
-      prazo_entrega:   prazo
-    })
-  });
-  const data = await res.json();
-  btn.disabled = false;
-  btn.textContent = '✨ Gerar contrato com IA';
-
-  if (data.texto) {
-    document.getElementById('ct-texto').value = data.texto;
-  } else {
-    alert('Erro ao gerar contrato: ' + (data.erro || 'tente novamente'));
+  try {
+    const res = await fetch('/api/ia/gerar-contrato', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        cliente_nome:    clienteNome.split(' — ')[0].trim(),
+        cliente_empresa: clienteNome.split(' — ')[1]?.trim() || '',
+        servicos:        servicosTexto,
+        servicos_lista:  servicosLista,
+        valor:           valor,
+        forma_pagamento: formaPgto,
+        duracao:         document.getElementById('ct-duracao').value,
+        tipo:            document.getElementById('ct-tipo').value,
+        prazo_entrega:   prazo
+      })
+    });
+    const data = await res.json();
+    if (data.texto) {
+      document.getElementById('ct-texto').value = data.texto;
+    } else {
+      alert('Erro ao gerar contrato: ' + (data.erro || 'tente novamente'));
+    }
+  } catch(e) {
+    alert('Erro de conexão ao gerar contrato: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Gerar contrato com IA';
   }
 }
 
@@ -1701,6 +1751,134 @@ async function atualizarValorProjeto(id, valor) {
 }
 function verClienteIndicacao(token) {
   if (token) window.open('/p/'+token, '_blank');
+}
+
+// ════════════════════════════════════════════════════════
+//  CATÁLOGO DE SERVIÇOS
+// ════════════════════════════════════════════════════════
+
+// Catálogo estático — pode ser alimentado por API futuramente
+const CATALOGO = [
+  { categoria: 'site',      nome: 'Site institucional',           descricao: 'Site completo com até 5 páginas', valor: 2500 },
+  { categoria: 'site',      nome: 'Landing page',                 descricao: 'Página de conversão focada', valor: 1200 },
+  { categoria: 'site',      nome: 'E-commerce',                   descricao: 'Loja virtual com carrinho e pagamento', valor: 5500 },
+  { categoria: 'site',      nome: 'Blog / Portal de conteúdo',    descricao: 'CMS com categorias e posts', valor: 1800 },
+  { categoria: 'hub',       nome: 'Hub de links (Linktree)',       descricao: 'Página centralizada de links', valor: 400 },
+  { categoria: 'hub',       nome: 'Hub completo com bio',         descricao: 'Hub com portfólio e contato', valor: 800 },
+  { categoria: 'seo',       nome: 'SEO on-page',                  descricao: 'Otimização de páginas e conteúdo', valor: 900 },
+  { categoria: 'seo',       nome: 'SEO técnico',                  descricao: 'Velocidade, estrutura e indexação', valor: 1200 },
+  { categoria: 'seo',       nome: 'Auditoria SEO',                descricao: 'Relatório completo de diagnóstico', valor: 600 },
+  { categoria: 'trafego',   nome: 'Gestão Google Ads',            descricao: 'Campanhas de busca e display', valor: 800 },
+  { categoria: 'trafego',   nome: 'Gestão Meta Ads',              descricao: 'Campanhas no Instagram e Facebook', valor: 800 },
+  { categoria: 'trafego',   nome: 'Gestão completa de tráfego',   descricao: 'Google + Meta + relatórios', valor: 1400 },
+  { categoria: 'automacao', nome: 'Automação de e-mails',         descricao: 'Fluxos de nutrição e CRM', valor: 1000 },
+  { categoria: 'automacao', nome: 'Chatbot / WhatsApp Bot',       descricao: 'Atendimento automatizado', valor: 1500 },
+  { categoria: 'automacao', nome: 'Integração de sistemas',       descricao: 'Conexão entre APIs e ferramentas', valor: 1200 },
+  { categoria: '3d',        nome: 'Modelagem 3D de produto',      descricao: 'Render realista para apresentações', valor: 1800 },
+  { categoria: '3d',        nome: 'Animação 3D',                  descricao: 'Animação de produto ou logomarca', valor: 2500 },
+  { categoria: 'metricas',  nome: 'Dashboard de métricas',        descricao: 'Relatório mensal GA4 + GSC', valor: 500 },
+  { categoria: 'metricas',  nome: 'Análise de dados',             descricao: 'Insights e recomendações estratégicas', valor: 800 },
+  { categoria: 'outro',     nome: 'Consultoria estratégica',      descricao: 'Sessão de planejamento digital', valor: 600 },
+  { categoria: 'outro',     nome: 'Manutenção mensal',            descricao: 'Suporte, atualizações e backup', valor: 350 },
+];
+
+const CATALOGO_LABELS = {
+  site:'🌐 Sites & Web', hub:'🔗 Hub de Links', seo:'🔍 SEO',
+  trafego:'📢 Tráfego Pago', automacao:'⚙️ Automação',
+  '3d':'🎨 3D & Design', metricas:'📊 Métricas', outro:'💼 Outros'
+};
+
+let _catalogoSelecionados = new Set();
+let _catalogoFiltrado     = [...CATALOGO];
+
+function abrirCatalogo() {
+  _catalogoSelecionados = new Set();
+  _catalogoFiltrado = [...CATALOGO];
+  document.getElementById('catalogo-busca').value = '';
+  renderizarCatalogo();
+  abrir('modal-catalogo');
+}
+
+function filtrarCatalogo(q) {
+  const q2 = q.toLowerCase();
+  _catalogoFiltrado = CATALOGO.filter(s =>
+    s.nome.toLowerCase().includes(q2) ||
+    s.descricao.toLowerCase().includes(q2) ||
+    CATALOGO_LABELS[s.categoria]?.toLowerCase().includes(q2)
+  );
+  renderizarCatalogo();
+}
+
+function renderizarCatalogo() {
+  const lista = document.getElementById('catalogo-lista');
+  if (!_catalogoFiltrado.length) {
+    lista.innerHTML = '<div class="catalogo-loading">Nenhum serviço encontrado.</div>';
+    atualizarContadorCatalogo();
+    return;
+  }
+  // Agrupa por categoria
+  const grupos = {};
+  _catalogoFiltrado.forEach(s => {
+    if (!grupos[s.categoria]) grupos[s.categoria] = [];
+    grupos[s.categoria].push(s);
+  });
+  let html = '';
+  for (const [cat, itens] of Object.entries(grupos)) {
+    html += `<div class="catalogo-cat">${CATALOGO_LABELS[cat] || cat}</div>`;
+    itens.forEach(s => {
+      const idx = CATALOGO.indexOf(s);
+      const sel = _catalogoSelecionados.has(idx) ? 'selecionado' : '';
+      html += `
+        <div class="catalogo-item ${sel}" onclick="toggleCatalogItem(${idx})">
+          <div class="ci-check"></div>
+          <div class="ci-info">
+            <div class="ci-nome">${s.nome}</div>
+            <div class="ci-desc">${s.descricao}</div>
+          </div>
+          <div class="ci-valor">${brl(s.valor)}</div>
+        </div>`;
+    });
+  }
+  lista.innerHTML = html;
+  atualizarContadorCatalogo();
+}
+
+function toggleCatalogItem(idx) {
+  if (_catalogoSelecionados.has(idx)) {
+    _catalogoSelecionados.delete(idx);
+  } else {
+    _catalogoSelecionados.add(idx);
+  }
+  // Atualiza visual sem rerender tudo
+  document.querySelectorAll('.catalogo-item').forEach((el, i) => {
+    // Reidentifica pelo índice CATALOGO via onclick
+    const onclickAttr = el.getAttribute('onclick') || '';
+    const match = onclickAttr.match(/toggleCatalogItem\((\d+)\)/);
+    if (match) {
+      const itemIdx = parseInt(match[1]);
+      el.classList.toggle('selecionado', _catalogoSelecionados.has(itemIdx));
+    }
+  });
+  atualizarContadorCatalogo();
+}
+
+function atualizarContadorCatalogo() {
+  const n = _catalogoSelecionados.size;
+  document.getElementById('catalogo-sel-count').textContent =
+    n > 0 ? `${n} serviço${n > 1 ? 's' : ''} selecionado${n > 1 ? 's' : ''}` : '';
+}
+
+function confirmarCatalogo() {
+  if (_catalogoSelecionados.size === 0) {
+    toast('Selecione ao menos um serviço', false);
+    return;
+  }
+  _catalogoSelecionados.forEach(idx => {
+    const s = CATALOGO[idx];
+    addServico({ nome: s.nome, descricao: s.descricao, categoria: s.categoria, valor_unit: s.valor, quantidade: 1 });
+  });
+  fechar('modal-catalogo');
+  toast(`✓ ${_catalogoSelecionados.size} serviço(s) adicionado(s)`);
 }
 </script>
 </body>
