@@ -1280,17 +1280,15 @@ function recorCatItem(el) {
 }
 
 function formatarPrecoCatalogo(p) {
-  const pj = p.preco_json;
-  if (pj && typeof pj === 'object') {
-    const setup = pj.setup || pj.valor_setup || 0;
-    const mensal = pj.mensal || pj.valor_mensal || 0;
-    if (setup && mensal) return `${brl(setup)} + ${brl(mensal)}/mês`;
-    if (setup) return brl(setup);
-    if (mensal) return `${brl(mensal)}/mês`;
-  }
-  if (p.valor_unit) {
-    return p.recorrente ? `${brl(p.valor_unit)}/${p.periodo||'mês'}` : brl(p.valor_unit);
-  }
+  const pj = p.preco_json && typeof p.preco_json === 'object' ? p.preco_json : {};
+  const setup  = pj.setup  || pj.valor_setup  || 0;
+  const mensal = pj.mensal || pj.valor_mensal  || 0;
+  const unico  = pj.unico  || pj.valor        || 0;
+  if (setup && mensal) return `${brl(setup)} + ${brl(mensal)}/mês`;
+  if (setup)   return brl(setup);
+  if (mensal)  return `${brl(mensal)}/mês`;
+  if (unico)   return brl(unico);
+  if (p.preco) return brl(p.preco);
   return '—';
 }
 
@@ -1307,7 +1305,6 @@ function filtrarCatalogo(q) {
 function atualizarContCatalogo() {
   const n = document.querySelectorAll('#cat-lista input[type=checkbox]:checked').length;
   document.getElementById('cat-sel-count').textContent = n ? `${n} selecionado${n>1?'s':''}` : '';
-  // Destaca bordas dos checked
   document.querySelectorAll('#cat-lista .cat-item').forEach(el => {
     const cb = el.querySelector('input[type=checkbox]');
     el.style.borderColor = cb && cb.checked ? 'var(--accent)' : 'var(--border)';
@@ -1323,17 +1320,17 @@ function confirmarCatalogo() {
     const p = _catalogoProdutos.find(x => x.id === id);
     if (!p) return;
     const pj = p.preco_json && typeof p.preco_json === 'object' ? p.preco_json : {};
-    const setup  = pj.setup || pj.valor_setup || 0;
-    const mensal = pj.mensal || pj.valor_mensal || 0;
-    // Se tem setup, adiciona linha setup; se tem mensal, adiciona linha mensal
+    const setup  = pj.setup  || pj.valor_setup  || 0;
+    const mensal = pj.mensal || pj.valor_mensal  || 0;
+    const unico  = pj.unico  || pj.valor        || p.preco || 0;
     if (setup) {
       addServico({ nome: p.nome + (mensal ? ' — Setup' : ''), descricao: p.descricao||'', categoria: p.categoria||'outro', quantidade: 1, valor_unit: setup, recorrente: false, periodo: 'unico' });
     }
     if (mensal) {
-      addServico({ nome: p.nome + (setup ? ' — Mensal' : ''), descricao: p.descricao||'', categoria: p.categoria||'outro', quantidade: 1, valor_unit: mensal, recorrente: true, periodo: p.periodo||'mensal' });
+      addServico({ nome: p.nome + (setup ? ' — Mensal' : ''), descricao: p.descricao||'', categoria: p.categoria||'outro', quantidade: 1, valor_unit: mensal, recorrente: true, periodo: 'mensal' });
     }
-    if (!setup && !mensal && p.valor_unit) {
-      addServico({ nome: p.nome, descricao: p.descricao||'', categoria: p.categoria||'outro', quantidade: 1, valor_unit: p.valor_unit, recorrente: p.recorrente||false, periodo: p.periodo||'unico' });
+    if (!setup && !mensal) {
+      addServico({ nome: p.nome, descricao: p.descricao||'', categoria: p.categoria||'outro', quantidade: 1, valor_unit: unico, recorrente: false, periodo: 'unico' });
     }
   });
   fechar('modal-catalogo');
