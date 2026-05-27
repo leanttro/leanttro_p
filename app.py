@@ -1360,20 +1360,24 @@ def admin_indicacao_atualizar(iid):
 def api_produtos_publico():
     """Retorna produtos/serviços cadastrados — usado pela lp_precos.html"""
     rows = query2("""
-        SELECT id, nome, descricao, categoria, valor_unit, recorrente, periodo,
-               destaque, preco_json
+        SELECT id, nome, descricao, categoria, tipo, preco, preco_json
         FROM produtos
-        ORDER BY destaque DESC NULLS LAST, categoria, nome
+        ORDER BY categoria, nome
     """) or []
     produtos = []
     for r in rows:
         p = dict(r)
-        # Garante que preco_json é dict (pode vir como string do postgres)
+        # Normaliza preco_json (pode vir como string do postgres)
         if p.get("preco_json") and isinstance(p["preco_json"], str):
             try:
                 p["preco_json"] = json.loads(p["preco_json"])
             except Exception:
                 p["preco_json"] = {}
+        # Garante que preco é float
+        try:
+            p["preco"] = float(p["preco"] or 0)
+        except (TypeError, ValueError):
+            p["preco"] = 0.0
         produtos.append(p)
     return jsonify(produtos)
 
@@ -1388,18 +1392,22 @@ def api_admin_catalogo_servicos():
     o admin selecionar ao montar os serviços de uma proposta.
     Retorna apenas os campos necessários para o seletor do frontend."""
     rows = query2("""
-        SELECT id, nome, descricao, categoria, valor_unit, recorrente, periodo
+        SELECT id, nome, descricao, categoria, tipo, preco, preco_json
         FROM produtos
         ORDER BY categoria, nome
     """) or []
     catalogo = []
     for r in rows:
         item = dict(r)
-        # Garante que valor_unit é float
+        if item.get("preco_json") and isinstance(item["preco_json"], str):
+            try:
+                item["preco_json"] = json.loads(item["preco_json"])
+            except Exception:
+                item["preco_json"] = {}
         try:
-            item["valor_unit"] = float(item["valor_unit"] or 0)
+            item["preco"] = float(item["preco"] or 0)
         except (TypeError, ValueError):
-            item["valor_unit"] = 0.0
+            item["preco"] = 0.0
         catalogo.append(item)
     return jsonify(catalogo)
 
