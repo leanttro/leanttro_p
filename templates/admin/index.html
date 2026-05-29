@@ -1315,6 +1315,7 @@ function atualizarContCatalogo() {
 function confirmarCatalogo() {
   const checados = [...document.querySelectorAll('#cat-lista input[type=checkbox]:checked')];
   if (!checados.length) { fechar('modal-catalogo'); return; }
+  const campoDesc = document.getElementById('mp-descricao');
   checados.forEach(cb => {
     const id = parseInt(cb.dataset.id);
     const p = _catalogoProdutos.find(x => x.id === id);
@@ -1331,6 +1332,11 @@ function confirmarCatalogo() {
     }
     if (!setup && !mensal) {
       addServico({ nome: p.nome, descricao: p.descricao||'', categoria: p.categoria||'outro', quantidade: 1, valor_unit: unico, recorrente: false, periodo: 'unico' });
+    }
+    // Adiciona descrição do produto no campo Informações/Descrição
+    if (p.descricao) {
+      const atual = campoDesc.value.trim();
+      campoDesc.value = atual ? atual + '\n\n' + p.descricao : p.descricao;
     }
   });
   fechar('modal-catalogo');
